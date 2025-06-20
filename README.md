@@ -148,7 +148,7 @@ Additionally, it also includes a sample backend Express API that can be used to 
 ### 1. Set Up Your Colab Environment
 
 > [!IMPORTANT]
-> **Note:** Please use a Google Colab instance with a GPU (e.g. T4 GPU) for better performance. All code are tested and optimized for Google Colab only!
+> **Note:** Please use a Google Colab instance with a GPU (e.g. T4 GPU) for better performance. All code is tested and optimized for Google Colab only!
 
 **a. Install the Colab XTerm extension (for command-line support):**
 ```python

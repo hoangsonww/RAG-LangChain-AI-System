@@ -15,6 +15,7 @@ Additionally, it also includes a sample backend Express API that can be used to 
 ## Table of Contents
 
 - [Overview](#LangChain--RAG-System-for-Portfolio-Support-in-Google-Colab)
+- [System Architecture](#system-architecture)
 - [Key Features](#key-features)
 - [Embedding and Language Models Used](#embedding-and-language-models-used)
 - [Strategies for Retrieval Accuracy and Persistent Memory](#strategies-for-retrieval-accuracy-and-persistent-memory)
@@ -25,8 +26,200 @@ Additionally, it also includes a sample backend Express API that can be used to 
 - [Why Use Google Colab](#why-use-google-colab)
 - [Code Sharing](#code-sharing-)
 - [Additional Resources](#additional-resources)
-  - [DO YOU WANT TO LEARN MORE ABOUT AI/ML?](#do-you-want-to-learn-more-about-aiml) 
+  - [DO YOU WANT TO LEARN MORE ABOUT AI/ML?](#do-you-want-to-learn-more-about-aiml)
 - [Conclusion](#conclusion)
+
+## System Architecture
+
+### High-Level Architecture Overview
+
+The RAG AI System follows a multi-layered architecture that combines document retrieval, vector embeddings, LLM generation, and external API integration. Below is the high-level system architecture:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[User Interface]
+        B[CLI Interface]
+        C[Jupyter Notebook]
+        D[HTTP Client]
+    end
+
+    subgraph "Application Layer"
+        E[Flask API Server]
+        F[RAG Processing Engine]
+        G[Conversation Manager]
+    end
+
+    subgraph "AI/ML Layer"
+        H[Ollama LLM<br/>llama2]
+        I[HuggingFace Embeddings<br/>all-MiniLM-L6-v2]
+        J[FAISS Vector Store]
+    end
+
+    subgraph "Backend Services"
+        K[Express API Server]
+        L[Authentication Middleware]
+        M[Swagger Documentation]
+    end
+
+    subgraph "Data Sources"
+        N[(MongoDB)]
+        O[Document Repository]
+        P[External Web Sources]
+    end
+
+    A --> E
+    B --> F
+    C --> F
+    D --> E
+
+    E --> F
+    F --> G
+    F --> H
+    F --> I
+    F --> J
+    F --> K
+
+    K --> L
+    K --> M
+    K --> N
+
+    F --> O
+    F --> P
+```
+
+### RAG Processing Pipeline
+
+The following diagram illustrates the complete RAG processing pipeline from user query to response generation:
+
+```mermaid
+graph TB
+    A[User Query] --> B{Query Type Detection}
+
+    B -->|Greeting| C[Return Preset Response]
+    B -->|Complex Query| D[Document Retrieval]
+
+    D --> E[FAISS Vector Search<br/>Top-K Similarity]
+
+    E --> F[Entity Extraction]
+    F --> G{Extract Entities}
+
+    G -->|Person Name| H[Call Team API]
+    G -->|Company Name| I[Call Investments API]
+    G -->|Sector| J[Call Sectors API]
+    G -->|URL| K[Call Scrape API]
+    G -->|Consultation| L[Call Consultations API]
+
+    H --> M[Aggregate API Data]
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+
+    M --> N[Build LLM Prompt]
+    E --> N
+    O[Conversation History] --> N
+
+    N --> P[Ollama LLM<br/>Generate Response]
+    P --> Q[Update Conversation History]
+    Q --> R[Return Response]
+
+    C --> R
+```
+
+### Data Flow Sequence
+
+This sequence diagram shows the detailed interaction between components during query processing:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Flask API
+    participant R as RAG Engine
+    participant V as FAISS Store
+    participant L as Ollama LLM
+    participant E as Express API
+    participant M as MongoDB
+
+    U->>F: POST /chat {query}
+    F->>R: Process Query
+
+    R->>V: Similarity Search
+    V-->>R: Top-K Documents
+
+    R->>R: Extract Entities<br/>(Regex Patterns)
+
+    par API Enrichment
+        R->>E: GET /api/team?name=...
+        E->>M: Query TeamMember
+        M-->>E: Member Data
+        E-->>R: Team Profile
+
+        R->>E: GET /api/investments?company=...
+        E->>M: Query Investment
+        M-->>E: Investment Data
+        E-->>R: Investment Info
+    end
+
+    R->>R: Build Prompt<br/>(Docs + API + History)
+
+    R->>L: Generate Response
+    L-->>R: LLM Output
+
+    R->>R: Update History
+    R-->>F: Response
+    F-->>U: JSON Response
+```
+
+### Backend API Architecture
+
+The Express backend provides RESTful endpoints with authentication and comprehensive documentation:
+
+```mermaid
+graph TB
+    subgraph "Express Backend API"
+        A[Express App Server<br/>Port 3456]
+
+        B[Swagger UI<br/>/docs]
+        C[Auth Routes<br/>/auth/token]
+        D[Protected Routes]
+
+        A --> B
+        A --> C
+        A --> D
+
+        subgraph "Authentication"
+            E[Bearer Token Middleware]
+            C --> E
+            D --> E
+        end
+
+        subgraph "API Endpoints"
+            F[/ping/]
+            G[/api/team/]
+            H[/api/investments/]
+            I[/api/sectors/]
+            J[/api/consultations/]
+            K[/api/scrape/]
+            L[/api/documents/]
+        end
+
+        D --> F
+        D --> G
+        D --> H
+        D --> I
+        D --> J
+        D --> K
+        D --> L
+
+        G --> M[(MongoDB)]
+        H --> M
+        I --> M
+        J --> M
+    end
+```
+
+For a comprehensive architectural overview with detailed design patterns, deployment strategies, and scalability considerations, please refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Key Features
 
@@ -101,7 +294,41 @@ Additionally, it also includes a sample backend Express API that can be used to 
 
 ## Strategies for Retrieval Accuracy and Persistent Memory
 
-- **Document Processing and Retrieval:**  
+### Document Processing Flow
+
+The following diagram illustrates the document indexing pipeline:
+
+```mermaid
+sequenceDiagram
+    participant S as System Startup
+    participant E as Express API
+    participant D as Document Processor
+    participant T as Text Splitter
+    participant H as HuggingFace Embeddings
+    participant V as FAISS Vector Store
+
+    S->>E: GET /api/documents/download
+    E-->>S: documents.zip
+
+    S->>D: Extract ZIP
+    D->>D: Read .txt Files
+
+    loop For Each Document
+        D->>T: Split into Chunks<br/>(500 chars, 100 overlap)
+        T-->>D: Text Chunks[]
+
+        D->>H: Encode Chunks
+        H-->>D: Embeddings[]
+    end
+
+    D->>V: Build Index
+    V-->>D: FAISS Index Ready
+
+    D-->>S: Indexing Complete
+    S->>S: Ready for Queries
+```
+
+- **Document Processing and Retrieval:**
   1. The system downloads a ZIP file of MasterClass documents via the `/api/documents/download` endpoint.
   2. It extracts all text files and splits them into manageable chunks using a `CharacterTextSplitter`.
   3. These text chunks are then embedded using the `all-MiniLM-L6-v2` model and stored in an in-memory FAISS vector store, which allows for efficient retrieval of relevant content based on user queries.
@@ -126,7 +353,42 @@ Additionally, it also includes a sample backend Express API that can be used to 
 
 ## API Tool Integration Methodology
 
-- **External API Endpoints:**  
+### Entity Extraction and API Routing
+
+The system uses regex-based entity extraction to dynamically route API calls:
+
+```mermaid
+graph TB
+    A[User Query + History] --> B[Entity Extractor]
+
+    B --> C{Regex Pattern Matching}
+
+    C -->|Person Pattern| D["consult/profile/team with Name"]
+    C -->|Company Pattern| E["company CompanyName"]
+    C -->|Sector Pattern| F["sector of Sector"]
+    C -->|URL Pattern| G["https://..."]
+
+    D --> H[API Router]
+    E --> H
+    F --> H
+    G --> H
+
+    H --> I{Route to API}
+
+    I -->|Person| J[/api/team<br/>/api/consultations/]
+    I -->|Company| K[/api/investments/]
+    I -->|Sector| L[/api/sectors/]
+    I -->|URL| M[/api/scrape/]
+
+    J --> N[Aggregate Results]
+    K --> N
+    L --> N
+    M --> N
+
+    N --> O[Enriched Context<br/>for LLM]
+```
+
+- **External API Endpoints:**
   The system integrates with multiple API endpoints, including:
   - **/ping:** Verifies API credentials.
   - **/api/documents/download:** Downloads MasterClass documents.
@@ -136,11 +398,11 @@ Additionally, it also includes a sample backend Express API that can be used to 
   - **/api/consultations:** Retrieves consultation details.
   - **/api/scrape:** Scrapes content from provided URLs.
 
-- **Dynamic Entity Extraction:**  
-  Regular expressions are used to extract entities (e.g., person names, company names, sectors, URLs) from the user's query or conversation history. Based on keywords such as "consult", "profile", "investment", "sector", or "scrape", the corresponding API endpoint is called.  
+- **Dynamic Entity Extraction:**
+  Regular expressions are used to extract entities (e.g., person names, company names, sectors, URLs) from the user's query or conversation history. Based on keywords such as "consult", "profile", "investment", "sector", or "scrape", the corresponding API endpoint is called.
   The retrieved data (or friendly messages if no data is found) is then appended to the prompt used to generate the final response.
 
-- **API Chaining and Data Enrichment:**  
+- **API Chaining and Data Enrichment:**
   The system leverages external APIs to enrich the responses with additional data related to team profiles, investments, sectors, and consultations. By chaining API calls and combining the retrieved data with document context, the system provides comprehensive and up-to-date information to support portfolio management activities.
 
 ## How to Deploy / Use the Code
@@ -311,9 +573,59 @@ And many more features can be tested interactively in the notebook!
 
 ## Why Use Google Colab
 
+### Deployment Architecture on Google Colab
+
+```mermaid
+graph TB
+    subgraph "Google Colab Environment"
+        A[Colab Notebook<br/>T4 GPU Runtime]
+
+        subgraph "Setup Phase"
+            B[Install colab-xterm]
+            C[Launch XTerm Terminal]
+            D[Install Ollama CLI]
+            E[Pull llama2 Model]
+        end
+
+        subgraph "Runtime Services"
+            F[Ollama Server<br/>Background Process]
+            G[Flask App<br/>Port 5000]
+            H[ngrok Tunnel<br/>Public HTTPS]
+        end
+
+        subgraph "Python Environment"
+            I[langchain_community]
+            J[faiss-cpu]
+            K[sentence-transformers]
+            L[pyngrok]
+        end
+
+        A --> B --> C --> D --> E
+        E --> F
+        A --> I
+        A --> J
+        A --> K
+        A --> L
+
+        F --> G
+        G --> H
+        L --> H
+    end
+
+    subgraph "External Services"
+        M[Express API<br/>Render.com]
+        N[MongoDB Atlas]
+        O[Internet Clients]
+    end
+
+    H <--> O
+    G <--> M
+    M <--> N
+```
+
 Google Colab provides a free, cloud-based Jupyter notebook environment with GPU support, making it an ideal platform for running AI models, training neural networks, and executing complex computations compared to local machines.
 
-Thus, I have elected to use Google Colab for this project to leverage its great GPU capabilities, easy setup, and seamless integration with external APIs and services. 
+Thus, I have elected to use Google Colab for this project to leverage its great GPU capabilities, easy setup, and seamless integration with external APIs and services.
 
 I have also tested the code so that it works on my MacOS (Local) and Windows (Local) machines, with minor adjustments. However, the performance was quite poor compared to Google Colab, so I recommend using Google Colab for the best experience.
 
@@ -349,9 +661,50 @@ Feel free to also check out my other **[GitHub projects](https://github.com/hoan
 
 ## Conclusion
 
+### Technology Stack Overview
+
+```mermaid
+mindmap
+  root((RAG AI System))
+    Backend
+      Express.js
+      TypeScript
+      Node.js
+      MongoDB/Mongoose
+      Swagger/OpenAPI
+
+    AI/ML
+      LangChain
+      Ollama
+      HuggingFace
+      FAISS
+      llama2 Model
+      all-MiniLM-L6-v2
+
+    Frontend/Interface
+      Flask
+      Jupyter/Colab
+      Python CLI
+      ngrok
+
+    DevOps
+      Docker
+      Render.com
+      GitHub
+      Makefile
+
+    Data Processing
+      Text Splitter
+      Regex Entity Extraction
+      Vector Embeddings
+      Web Scraping
+```
+
 This RAG system for portfolio support in Google Colab demonstrates the integration of document retrieval, dynamic entity extraction, and external API calls to generate context-aware responses using a Hugging Face language model via Ollama. The system is designed to provide accurate and informative responses based on user queries and conversation history. By leveraging the power of AI models and external data sources, the system can assist users in accessing relevant information about PeakSpan MasterClasses, team profiles, investments, sectors, and more.
 
 The system's ability to maintain persistent memory, handle follow-up questions, and enrich responses with external API data makes it a valuable tool for portfolio management and information retrieval tasks. By combining document context, dynamic entity extraction, and API chaining, the system can generate comprehensive and context-aware responses that address user queries effectively.
+
+For detailed architectural documentation, design patterns, and deployment strategies, please refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 

@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # MongoDB for the Express backend
+  mongodb:
+    image: mongo:7.0
+    container_name: rag-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - rag-network
+
+  # Express Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rag-backend
+    restart: unless-stopped
+    ports:
+      - "3456:3456"
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/rag_db?authSource=admin
+      PORT: 3456
+    depends_on:
+      - mongodb
+    networks:
+      - rag-network
+
+  # Python Flask RAG Application
+  rag-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.rag
+    container_name: rag-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      API_BASE_URL: http://backend:3456
+      API_TOKEN: token
+      FLASK_ENV: production
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - rag-app
+    networks:
+      - rag-network
+
+  # Redis for caching (optional enhancement)
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - rag-network
+
+networks:
+  rag-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:

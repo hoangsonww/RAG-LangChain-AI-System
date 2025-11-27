@@ -1,0 +1,55 @@
+# Core Dependencies
+flask==3.1.0
+flask-cors==5.0.0
+flask-socketio==5.4.1
+python-socketio==5.12.0
+python-engineio==4.10.1
+gunicorn==23.0.0
+pyngrok==7.2.3
+
+# LangChain & RAG
+langchain==0.3.17
+langchain-community==0.3.17
+langchain-core==0.3.28
+langchain-ollama==0.2.2
+langchain-openai==0.2.14
+langchain-huggingface==0.1.2
+
+# Vector Databases
+chromadb==0.6.4
+faiss-cpu==1.9.0.post1
+
+# Embeddings
+sentence-transformers==3.4.1
+transformers==4.48.3
+torch==2.6.0
+
+# Text Processing
+pypdf==5.1.0
+python-docx==1.1.2
+python-pptx==1.0.2
+openpyxl==3.1.5
+beautifulsoup4==4.12.3
+lxml==5.3.0
+markdown==3.7
+
+# Search & Ranking
+rank-bm25==0.2.2
+
+# Utilities
+requests==2.32.3
+python-dotenv==1.0.1
+pydantic==2.10.6
+pydantic-settings==2.8.0
+redis==5.2.1
+tenacity==9.0.0
+aiohttp==3.11.11
+tiktoken==0.8.0
+
+# Monitoring & Logging
+loguru==0.7.3
+
+# Development
+pytest==8.3.4
+pytest-asyncio==0.24.0
+black==24.10.0

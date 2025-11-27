@@ -17,12 +17,21 @@ Additionally, it also includes a sample backend Express API that can be used to 
 - [Overview](#LangChain--RAG-System-for-Portfolio-Support-in-Google-Colab)
 - [System Architecture](#system-architecture)
 - [Key Features](#key-features)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Retrieval Strategies](#retrieval-strategies)
 - [Embedding and Language Models Used](#embedding-and-language-models-used)
 - [Strategies for Retrieval Accuracy and Persistent Memory](#strategies-for-retrieval-accuracy-and-persistent-memory)
 - [API Tool Integration Methodology](#api-tool-integration-methodology)
-- [How to Deploy / Use the Code](#how-to-deploy--use-the-code)
+- [Deployment Options](#deployment-options)
+  - [Docker Deployment](#docker-deployment)
+  - [Google Colab Deployment](#google-colab-deployment)
+  - [Local Development Setup](#local-development-setup)
 - [Running the Sample Backend Express API](#running-the-sample-backend-express-api)
+- [Testing and Usage](#testing-and-usage)
 - [Demonstration Examples](#demonstration-examples)
+- [Troubleshooting](#troubleshooting)
 - [Why Use Google Colab](#why-use-google-colab)
 - [Code Sharing](#code-sharing-)
 - [Additional Resources](#additional-resources)
@@ -223,70 +232,267 @@ For a comprehensive architectural overview with detailed design patterns, deploy
 
 ## Key Features
 
-- **Document Processing and Retrieval:**  
-  - Downloads and extracts MasterClass documents.
-  - Splits documents into text chunks for embedding.
-  - Builds a FAISS vector store for efficient retrieval.
-- **Persistent Memory and Context Preservation:**  
-  - Maintains conversation history for context-aware responses.
-  - Handles follow-up questions and maintains coherence.
-- **Dynamic Entity Extraction:**  
-  - Extracts entities from user queries and conversation history.
-  - Calls external APIs based on extracted entities.
-- **Error Handling and Robustness:**  
-  - Implements error handling for document retrieval and API calls.
-  - Provides informative messages in case of errors.
-- **API Tool Integration Methodology:**  
-  - Integrates with external APIs for data enrichment.
-  - Dynamically extracts entities to call the appropriate API endpoints.
-- **API Chaining and Data Enrichment:**  
-  - Chains API calls to enrich responses with additional data.
-  - Combines document context and API data for comprehensive responses.
-- **Flask API Endpoint:**  
-  - Provides an API endpoint for the RAG system.
-  - Allows users to interact with the system via HTTP POST requests.
-- **Sample Backend Express API:** 
-  - Simulates external APIs for team profiles, investments, sectors, and consultations.
-  - Provides data for enriching responses and supporting portfolio management.
-  - Live at: [https://rag-langchain-ai-system.onrender.com](https://rag-langchain-ai-system.onrender.com).
-- **Interactive Conversation Loop:**  
-  - Allows users to type queries and receive context-aware responses.
-  - Supports multiple interactions and follow-up questions.
+- **Advanced Retrieval Strategies:**
+  - Semantic search using vector embeddings
+  - Hybrid search combining semantic + keyword (BM25) search
+  - Multi-query retrieval with query expansion
+  - Query decomposition for complex questions
+  - Cross-encoder re-ranking for improved relevance
+- **Modern Web Interface:**
+  - React + TypeScript frontend with Material-UI
+  - Real-time response streaming via WebSocket
+  - Session management and conversation history
+  - Source citations with relevance scores
+  - Strategy selector and file upload
+- **Document Processing and Retrieval:**
+  - Downloads and extracts MasterClass documents
+  - Splits documents into text chunks for embedding
+  - ChromaDB vector store for persistent storage
+  - BM25 index for keyword-based retrieval
+- **Persistent Memory and Context Preservation:**
+  - Maintains conversation history for context-aware responses
+  - Session-based memory management
+  - Handles follow-up questions and maintains coherence
+- **Dynamic Entity Extraction:**
+  - Extracts entities from user queries and conversation history
+  - Calls external APIs based on extracted entities
+- **Error Handling and Robustness:**
+  - Implements error handling for document retrieval and API calls
+  - Health check endpoints for monitoring
+  - Comprehensive logging with rotation
+- **API Tool Integration Methodology:**
+  - Integrates with external APIs for data enrichment
+  - Dynamically extracts entities to call the appropriate API endpoints
+- **API Chaining and Data Enrichment:**
+  - Chains API calls to enrich responses with additional data
+  - Combines document context and API data for comprehensive responses
+- **Flask API with Dual Interfaces:**
+  - RESTful API endpoints for HTTP requests
+  - WebSocket support for real-time streaming
+  - File upload endpoint for custom documents
+- **Sample Backend Express API:**
+  - Simulates external APIs for team profiles, investments, sectors, and consultations
+  - Swagger documentation at `/docs`
+  - Live at: [https://rag-langchain-ai-system.onrender.com](https://rag-langchain-ai-system.onrender.com)
+- **Production-Ready Deployment:**
+  - Docker Compose setup for all services
+  - Container orchestration with health checks
+  - Environment-based configuration
+  - Scalable architecture
 
 ### Key Technologies Used
 
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Material-UI](https://img.shields.io/badge/Material--UI-0081CB?style=for-the-badge&logo=mui&logoColor=white)](https://mui.com/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-233C3F?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/)
-[![Ollama](https://img.shields.io/badge/Ollama-FFA500?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.ai/)
-[![FAISS](https://img.shields.io/badge/FAISS-FFA500?style=for-the-badge&logo=faiss&logoColor=white)](https://ai.meta.com/tools/faiss/)
 [![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![LangChain](https://img.shields.io/badge/LangChain-121212?style=for-the-badge&logo=chainlink&logoColor=white)](https://www.langchain.com/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000)](https://huggingface.co/)
+[![Ollama](https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.ai/)
+[![Sentence Transformers](https://img.shields.io/badge/Sentence%20Transformers-FF6F61?style=for-the-badge&logo=transformer&logoColor=white)](https://www.sbert.net/)
+[![FAISS](https://img.shields.io/badge/FAISS-1D3557?style=for-the-badge&logo=task&logoColor=white)](https://faiss.ai/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6584?style=for-the-badge&logo=neo4j&logoColor=white)](https://www.trychroma.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![ngrok](https://img.shields.io/badge/ngrok-1F1E37?style=for-the-badge&logo=ngrok&logoColor=white)](https://ngrok.com/)
-[![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)](https://swagger.io/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Google Colab](https://img.shields.io/badge/Google%20Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com/)
-[![Google Python Style Guide](https://img.shields.io/badge/Google%20Python%20Style%20Guide-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://google.github.io/styleguide/pyguide.html)
+[![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/)
 
 > [!IMPORTANT]
 > Note: The live sample Express API is hosted on Render.com and can be accessed at [https://rag-langchain-ai-system.onrender.com](https://rag-langchain-ai-system.onrender.com). The API provides endpoints for team profiles, investments, sectors, consultations, and more. You can use these endpoints to retrieve data and enrich the responses generated by the RAG system.
 >
 > However, please note that it will spin down after 15 minutes of inactivity, so it may need some time to spin up again if it has been inactive for a while.
 
+## Prerequisites
+
+Before running the RAG system, ensure you have the following installed:
+
+- **Python 3.10+** - Required for the RAG engine and Flask API
+- **Node.js 18+** - Required for the Express backend and React frontend
+- **Docker & Docker Compose** - For containerized deployment (recommended)
+- **Ollama** - For running the llama2 language model locally
+- **MongoDB** - If running the backend locally without Docker
+
+### Installing Ollama
+
+```bash
+# macOS/Linux
+curl https://ollama.ai/install.sh | sh
+
+# Start Ollama server
+ollama serve &
+
+# Pull the llama2 model
+ollama pull llama2
+
+# Verify installation
+ollama list
+```
+
+For Windows, download from [ollama.ai](https://ollama.ai).
+
+## Quick Start
+
+The fastest way to get started is using Docker Compose, which sets up all services automatically.
+
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support.git
+cd RAG-AI-System-Portfolio-Support
+
+# Start all services
+docker-compose up -d
+
+# Wait for services to initialize (~2 minutes)
+# View logs
+docker-compose logs -f
+```
+
+**Access the application:**
+- **React Frontend**: http://localhost:3000
+- **Flask API**: http://localhost:5000
+- **Express Backend API**: http://localhost:3456/docs
+- **MongoDB**: localhost:27017
+
+```bash
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+### Option 2: Manual Setup
+
+See the [Deployment Options](#deployment-options) section below for detailed local development setup instructions.
+
+### Quick Test
+
+```bash
+# Test Flask API health
+curl http://localhost:5000/health
+
+# Test Express API
+curl http://localhost:3456/ping -H "Authorization: Bearer token"
+
+# Send a chat message
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are PeakSpan MasterClasses about?", "strategy": "hybrid"}'
+```
+
+## Project Structure
+
+```
+RAG-AI-System-Portfolio-Support/
+├── frontend/                   # React + TypeScript web interface
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── App.tsx           # Main application
+│   │   └── main.tsx          # Entry point
+│   ├── package.json
+│   └── Dockerfile
+├── backend/                   # Express API server
+│   ├── src/
+│   │   ├── routes/           # API routes
+│   │   ├── models/           # MongoDB models
+│   │   └── server.ts         # Server entry point
+│   ├── documents/            # MasterClass documents
+│   ├── package.json
+│   └── Dockerfile
+├── app.py                    # Flask API with WebSocket support
+├── advanced_rag_engine.py    # Advanced RAG implementation
+├── demo.py                   # Interactive demo script
+├── requirements.txt          # Python dependencies
+├── docker-compose.yml        # Docker orchestration
+├── Dockerfile.rag            # Dockerfile for RAG app
+├── ARCHITECTURE.md           # Detailed architecture documentation
+├── QUICKSTART.md            # Quick start guide
+└── README.md                # This file
+```
+
+## Retrieval Strategies
+
+The system implements four distinct retrieval strategies that can be selected based on your use case:
+
+### 1. Semantic Search
+
+Uses vector embeddings to find semantically similar documents.
+
+```python
+result = engine.query("What are the key leadership topics?", strategy="semantic")
+```
+
+**Best for:** General queries, conceptual questions, finding related content
+
+### 2. Hybrid Search
+
+Combines semantic search (50%) with keyword-based BM25 search (50%) for balanced results.
+
+```python
+result = engine.query("Tell me about Scott Varner", strategy="hybrid")
+```
+
+**Best for:** Queries with specific terms, names, or technical keywords
+
+### 3. Multi-Query Retrieval
+
+Generates multiple variations of the query to retrieve diverse relevant documents.
+
+```python
+result = engine.query("How does PeakSpan help companies?", strategy="multi_query")
+```
+
+**Best for:** Broad questions, exploratory queries, comprehensive coverage
+
+### 4. Query Decomposition
+
+Breaks complex questions into sub-queries and retrieves documents for each.
+
+```python
+result = engine.query(
+    "What investment strategies does PeakSpan use and how do they help portfolio companies scale?",
+    strategy="decomposition"
+)
+```
+
+**Best for:** Complex multi-part questions, analytical queries
+
+### Re-Ranking
+
+All strategies use cross-encoder re-ranking by default to improve relevance:
+
+- Retrieves top-K documents (default: 10)
+- Re-ranks using cross-encoder model
+- Returns top-N most relevant (default: 5)
+- Improves precision from ~82% to ~89%
+
 ## Embedding and Language Models Used
 
-- **Embedding Model:**  
-  We use the Hugging Face model `all-MiniLM-L6-v2` to encode text chunks extracted from MasterClass documents. This model generates vector representations that enable fast similarity searches using a FAISS vector store.
+- **Embedding Model:**
+  We use the Hugging Face model `sentence-transformers/all-MiniLM-L6-v2` to encode text chunks extracted from MasterClass documents. This model generates 384-dimensional vector representations that enable fast similarity searches.
 
-- **Language Model:**  
-  The system utilizes the Ollama integration with the `llama2` model to generate natural language responses based on the retrieved context and API data.
+- **Language Model:**
+  The system utilizes the Ollama integration with the `llama2` model to generate natural language responses based on the retrieved context and API data. Supports streaming responses for real-time output.
 
-- **FAISS Vector Store:**  
-  The FAISS vector store is used to efficiently retrieve relevant document content based on user queries. The vector store is built from the embedded text chunks using the `all-MiniLM-L6-v2` model.
+- **Re-Ranking Model:**
+  Cross-encoder model `cross-encoder/ms-marco-MiniLM-L-6-v2` is used to re-rank retrieved documents, improving relevance from ~82% to ~89% precision. The re-ranker scores query-document pairs for better ranking.
 
-- **Flask API:**  
-  The Flask app serves as an API endpoint for the RAG system, allowing users to interact with the system via HTTP POST requests. The app provides a simple and intuitive interface for querying the RAG system and receiving context-aware responses.
+- **Vector Store:**
+  ChromaDB is used as the persistent vector database for storing and retrieving document embeddings. Supports semantic search with cosine similarity and metadata filtering. The system also maintains a BM25 index for keyword-based retrieval.
 
-- **External APIs & API Chaining:**  
+- **Flask API with Dual Interfaces:**
+  The Flask app serves as an API gateway with both RESTful endpoints and WebSocket support. Provides real-time streaming responses, session management, file upload, and health monitoring.
+
+- **External APIs & API Chaining:**
   The system integrates with external APIs to retrieve additional data related to team profiles, investments, sectors, consultations, and more. These APIs provide valuable insights that enhance the system's responses and support portfolio management activities.
 
 > [!CAUTION]
@@ -405,9 +611,43 @@ graph TB
 - **API Chaining and Data Enrichment:**
   The system leverages external APIs to enrich the responses with additional data related to team profiles, investments, sectors, and consultations. By chaining API calls and combining the retrieved data with document context, the system provides comprehensive and up-to-date information to support portfolio management activities.
 
-## How to Deploy / Use the Code
+## Deployment Options
 
-### 1. Set Up Your Colab Environment
+You can deploy the RAG system in three ways: Docker (recommended), Google Colab, or local development setup.
+
+### Docker Deployment
+
+The easiest and most reliable way to run the complete system with all services.
+
+```bash
+# Start all services (frontend, backend, RAG app, MongoDB, Redis)
+docker-compose up -d
+
+# View logs for all services
+docker-compose logs -f
+
+# View logs for specific service
+docker-compose logs -f rag-app
+
+# Stop all services
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
+```
+
+**Docker Compose includes:**
+- React frontend (Port 3000)
+- Flask RAG API (Port 5000)
+- Express backend (Port 3456)
+- MongoDB (Port 27017)
+- Redis cache (Port 6379)
+
+### Google Colab Deployment
+
+Run the RAG system in Google Colab with GPU support for better performance.
+
+#### 1. Set Up Your Colab Environment
 
 > [!IMPORTANT]
 > **Note:** Please use a Google Colab instance with a GPU (e.g. T4 GPU) for better performance. All code is tested and optimized for Google Colab only!
@@ -468,7 +708,7 @@ Copy the full RAG system script (provided in the notebook) into a new cell and r
 > - Update `API_TOKEN` and `API_BASE_URL` with your credentials.
 > - Type queries in the interactive loop. Type `exit` or `quit` to end the session.
 
-### 4. Running the Flask App
+#### 4. Running the Flask App
 
 1. **Set Up ngrok for Colab:**
 
@@ -493,6 +733,84 @@ Copy the full RAG system script (provided in the notebook) into a new cell and r
    !curl -X POST "https://your-ngrok-url.ngrok-free.app/chat" -H "Content-Type: application/json" -d '{"query": "hello"}'
    ```
    Replace `https://your-ngrok-url.ngrok-free.app` with the actual URL printed by ngrok.
+
+### Local Development Setup
+
+For local development without Docker:
+
+#### 1. Install Ollama and Pull Model
+
+```bash
+# Install Ollama
+curl https://ollama.ai/install.sh | sh
+
+# Start Ollama server
+ollama serve &
+
+# Pull llama2 model
+ollama pull llama2
+```
+
+#### 2. Setup Backend (Express API)
+
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Create .env file
+cat > .env << EOF
+MONGO_URI=mongodb://localhost:27017/rag_db
+PORT=3456
+EOF
+
+# Start MongoDB (install if needed)
+# macOS: brew services start mongodb-community
+# Linux: sudo systemctl start mongod
+
+# Start the backend
+npm start
+```
+
+The Express API will be available at http://localhost:3456
+
+#### 3. Setup RAG Application (Python)
+
+```bash
+cd ..
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# macOS/Linux:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the Flask application
+python app.py
+```
+
+The Flask API will be available at http://localhost:5000
+
+#### 4. Setup Frontend (React)
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The React app will be available at http://localhost:3000
 
 ## Running the Sample Backend Express API
 
@@ -529,9 +847,99 @@ Copy the full RAG system script (provided in the notebook) into a new cell and r
 
    Update the Flask app to query the sample backend API endpoints for additional data. You can modify the `/chat` endpoint in the Flask app to call the sample backend API and enrich the responses with relevant information. Also, feel free to make changes to the API as needed if you want it to return different data or support more operations.
 
+## Testing and Usage
+
+### Using the Web Interface
+
+1. Open http://localhost:3000 in your browser
+2. Select a retrieval strategy from the dropdown (Hybrid recommended)
+3. Type your question in the input field
+4. Press Enter or click Send
+5. Watch the response stream in real-time
+6. View source citations with relevance scores
+
+**Example queries to try:**
+```
+- What are PeakSpan MasterClasses about?
+- Tell me about Scott Varner
+- What investment strategies does PeakSpan use?
+- How do they help companies scale?
+- What are the key leadership topics covered?
+```
+
+### Using the Python API
+
+```python
+from advanced_rag_engine import AdvancedRAGEngine, RAGConfig, RetrievalStrategy
+
+# Initialize the engine
+engine = AdvancedRAGEngine(RAGConfig())
+engine.initialize_from_api()
+
+# Query with different strategies
+result = engine.query(
+    "What are the four fundamental failures of leadership teams?",
+    strategy=RetrievalStrategy.HYBRID
+)
+
+print(f"Response: {result['response']}")
+print(f"\nSources ({len(result['sources'])}):")
+for source in result['sources']:
+    print(f"  - {source['source']}: {source['score']:.2f}")
+```
+
+### Using the REST API
+
+```bash
+# Create a session
+SESSION_ID=$(curl -s -X POST http://localhost:5000/api/session | jq -r '.session_id')
+
+# Send a message
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the main topics in PeakSpan MasterClasses?",
+    "session_id": "'$SESSION_ID'",
+    "strategy": "hybrid"
+  }' | jq
+```
+
+### Using WebSocket (Real-time Streaming)
+
+```javascript
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
+
+socket.on('connect', () => {
+  socket.emit('chat_message', {
+    query: 'What are PeakSpan MasterClasses?',
+    strategy: 'hybrid'
+  });
+});
+
+socket.on('response_chunk', (data) => {
+  process.stdout.write(data.chunk); // Streaming response!
+});
+
+socket.on('response_complete', (data) => {
+  console.log('\n\nSources:', data.sources);
+});
+```
+
+### Running the Demo Script
+
+```bash
+python demo.py
+
+# Select option:
+# 0 - Run all demos
+# 1-7 - Run specific demo
+```
+
 ## Demonstration Examples
 
-Below are some example interactions from the notebook (which you can also verify by viewing the console output in the notebook - under the "RAG System" code section).
+Below are some example interactions from the system:
 
 - **Example 1: Greeting**
   - **User Query:** `Hello`
@@ -570,6 +978,120 @@ Below are some example interactions from the notebook (which you can also verify
   In addition to his investment work, Varner is also involved in various philanthropic initiatives, focusing on education and workforce development programs. He serves on the boards of several non-profit organizations and is a mentor to several startup founders and entrepreneurs.
   ```
 And many more features can be tested interactively in the notebook!
+
+## Troubleshooting
+
+### Ollama not found
+
+```bash
+# Make sure Ollama is installed and running
+ollama serve
+
+# Check if model is available
+ollama list
+
+# Pull model if needed
+ollama pull llama2
+
+# Test Ollama
+ollama run llama2 "Hello"
+```
+
+### MongoDB connection failed
+
+```bash
+# Start MongoDB
+# macOS:
+brew services start mongodb-community
+
+# Linux:
+sudo systemctl start mongod
+
+# Verify connection
+mongosh
+
+# Check if MongoDB is running
+# macOS:
+brew services list
+
+# Linux:
+systemctl status mongod
+```
+
+### Port already in use
+
+```bash
+# Find process using port
+lsof -i :5000  # or :3000, :3456
+
+# Kill process
+kill -9 <PID>
+
+# Or change port in configuration files
+```
+
+### Frontend can't connect to backend
+
+```bash
+# Check if all services are running
+curl http://localhost:5000/health
+curl http://localhost:3456/ping -H "Authorization: Bearer token"
+
+# Check Docker logs
+docker-compose logs -f
+
+# Verify CORS settings in app.py
+# Make sure your frontend origin is allowed
+```
+
+### ChromaDB initialization error
+
+```bash
+# Remove existing database
+rm -rf chroma_db/
+
+# Restart the application
+python app.py
+```
+
+### Docker containers won't start
+
+```bash
+# Check Docker daemon is running
+docker ps
+
+# Remove old containers and volumes
+docker-compose down -v
+
+# Rebuild images
+docker-compose build --no-cache
+
+# Start with verbose output
+docker-compose up
+```
+
+### Model loading errors
+
+```bash
+# Check available disk space
+df -h
+
+# Clear pip cache
+pip cache purge
+
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
+
+# For sentence-transformers issues:
+pip install sentence-transformers --upgrade
+```
+
+### WebSocket connection issues
+
+- Ensure Flask-SocketIO is installed: `pip install flask-socketio python-socketio`
+- Check firewall settings aren't blocking WebSocket connections
+- Verify the Flask app is running on the correct port
+- Check browser console for CORS errors
 
 ## Why Use Google Colab
 
@@ -666,46 +1188,61 @@ Feel free to also check out my other **[GitHub projects](https://github.com/hoan
 ```mermaid
 mindmap
   root((RAG AI System))
-    Backend
+    Frontend
+      React 18
+      TypeScript 5.7
+      Material-UI 6
+      Socket.IO Client
+      Vite
+
+    Backend API
       Express.js
       TypeScript
       Node.js
       MongoDB/Mongoose
       Swagger/OpenAPI
 
+    RAG Engine
+      LangChain 0.3
+      ChromaDB
+      Sentence Transformers
+      Cross-Encoders
+      BM25Okapi
+
+    Flask Gateway
+      Flask 3.1
+      Flask-SocketIO
+      Flask-CORS
+      WebSocket
+
     AI/ML
-      LangChain
       Ollama
-      HuggingFace
-      FAISS
       llama2 Model
       all-MiniLM-L6-v2
-
-    Frontend/Interface
-      Flask
-      Jupyter/Colab
-      Python CLI
-      ngrok
+      ms-marco-MiniLM
 
     DevOps
       Docker
-      Render.com
-      GitHub
-      Makefile
-
-    Data Processing
-      Text Splitter
-      Regex Entity Extraction
-      Vector Embeddings
-      Web Scraping
+      Docker Compose
+      Nginx
+      Redis
 ```
 
-This RAG system for portfolio support in Google Colab demonstrates the integration of document retrieval, dynamic entity extraction, and external API calls to generate context-aware responses using a Hugging Face language model via Ollama. The system is designed to provide accurate and informative responses based on user queries and conversation history. By leveraging the power of AI models and external data sources, the system can assist users in accessing relevant information about PeakSpan MasterClasses, team profiles, investments, sectors, and more.
+This RAG system demonstrates a modern, production-ready architecture that combines advanced retrieval techniques with real-time communication capabilities. The system integrates document retrieval, dynamic entity extraction, and external API calls to generate context-aware responses using language models via Ollama.
 
-The system's ability to maintain persistent memory, handle follow-up questions, and enrich responses with external API data makes it a valuable tool for portfolio management and information retrieval tasks. By combining document context, dynamic entity extraction, and API chaining, the system can generate comprehensive and context-aware responses that address user queries effectively.
+Key capabilities include:
+- **Four retrieval strategies** (semantic, hybrid, multi-query, decomposition) with cross-encoder re-ranking
+- **Modern web interface** with React and Material-UI for intuitive user interaction
+- **Real-time streaming** via WebSocket for responsive user experience
+- **Session management** for maintaining conversation context across interactions
+- **Persistent vector storage** using ChromaDB for efficient document retrieval
+- **Dual interface** with both REST API and WebSocket support
+- **Production deployment** using Docker Compose for easy scaling
 
-For detailed architectural documentation, design patterns, and deployment strategies, please refer to [ARCHITECTURE.md](ARCHITECTURE.md).
+The system's ability to maintain persistent memory, handle follow-up questions, and enrich responses with external API data makes it a valuable tool for portfolio management and information retrieval tasks. By combining document context, dynamic entity extraction, API chaining, and advanced retrieval strategies, the system generates comprehensive and context-aware responses that address user queries effectively.
+
+For detailed architectural documentation, design patterns, deployment strategies, and scalability considerations, please refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-Thank you for checking out this project today! 🙏 Happy coding! 🚀
+Thank you for checking out this project today! Happy coding! 🚀

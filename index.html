@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced RAG AI System for Portfolio Support - A production-ready Retrieval-Augmented Generation system with modern full-stack architecture">
+    <meta name="keywords" content="RAG, AI, LangChain, LLM, Machine Learning, Ollama, Vector Database, FAISS, ChromaDB">
+    <meta name="author" content="Son Nguyen">
+    <title>RAG AI System - Advanced Portfolio Support Platform</title>
+    <link rel="stylesheet" href="packages/styles.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <!-- Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Prism for code highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <span>RAG AI System</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#hero" class="nav-link">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#architecture" class="nav-link">Architecture</a></li>
+                <li><a href="#quickstart" class="nav-link">Quick Start</a></li>
+                <li><a href="#technologies" class="nav-link">Technologies</a></li>
+                <li><a href="#demo" class="nav-link">Demo</a></li>
+                <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support" class="nav-link" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a></li>
+            </ul>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress-container">
+        <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-background"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="badge">Production-Ready AI System</div>
+                <h1 class="hero-title">
+                    Advanced RAG AI System
+                    <span class="gradient-text">for Portfolio Support</span>
+                </h1>
+                <p class="hero-description">
+                    A cutting-edge Retrieval-Augmented Generation system combining LangChain, Ollama, and modern full-stack architecture 
+                    to deliver intelligent, context-aware responses with real-time streaming capabilities.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#quickstart" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support" class="btn btn-secondary" target="_blank">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                    <a href="https://rag-langchain-ai-system.onrender.com" class="btn btn-accent" target="_blank">
+                        <i class="fas fa-globe"></i> Live Demo
+                    </a>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Retrieval Strategies</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">89%</div>
+                        <div class="stat-label">Precision @5</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Real-time</div>
+                        <div class="stat-label">WebSocket Streaming</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Full-Stack</div>
+                        <div class="stat-label">React + Flask + Express</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Key Features</h2>
+                <p class="section-description">
+                    A comprehensive AI system with advanced retrieval strategies, real-time capabilities, and production-ready architecture
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="feature-title">Advanced RAG Techniques</h3>
+                    <p class="feature-description">
+                        4 retrieval strategies (Semantic, Hybrid, Multi-Query, Decomposition) with cross-encoder re-ranking for 89% precision
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Semantic search with embeddings</li>
+                        <li><i class="fas fa-check"></i> Hybrid BM25 + Vector search</li>
+                        <li><i class="fas fa-check"></i> Multi-query expansion</li>
+                        <li><i class="fas fa-check"></i> Query decomposition</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Real-Time Streaming</h3>
+                    <p class="feature-description">
+                        WebSocket-based streaming responses with Socket.IO for instant, progressive AI-generated content delivery
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Live response streaming</li>
+                        <li><i class="fas fa-check"></i> Session management</li>
+                        <li><i class="fas fa-check"></i> Multi-user support</li>
+                        <li><i class="fas fa-check"></i> Connection resilience</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3 class="feature-title">Modern Full-Stack Architecture</h3>
+                    <p class="feature-description">
+                        React + TypeScript frontend, Flask API gateway, Express backend, and containerized deployment with Docker
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> React 18 + Material-UI</li>
+                        <li><i class="fas fa-check"></i> Flask + SocketIO</li>
+                        <li><i class="fas fa-check"></i> Express + MongoDB</li>
+                        <li><i class="fas fa-check"></i> Docker Compose</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3 class="feature-title">Persistent Vector Storage</h3>
+                    <p class="feature-description">
+                        ChromaDB for persistent embeddings, FAISS for fast retrieval, and BM25 index for keyword-based search
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> ChromaDB persistence</li>
+                        <li><i class="fas fa-check"></i> FAISS similarity search</li>
+                        <li><i class="fas fa-check"></i> BM25 keyword search</li>
+                        <li><i class="fas fa-check"></i> Hybrid retrieval</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <h3 class="feature-title">API Integration & Chaining</h3>
+                    <p class="feature-description">
+                        Dynamic entity extraction with regex patterns, intelligent API routing, and data enrichment from external sources
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Entity extraction</li>
+                        <li><i class="fas fa-check"></i> API chaining</li>
+                        <li><i class="fas fa-check"></i> Data enrichment</li>
+                        <li><i class="fas fa-check"></i> Context aggregation</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <i class="fas fa-memory"></i>
+                    </div>
+                    <h3 class="feature-title">Conversation Memory</h3>
+                    <p class="feature-description">
+                        Maintains context across conversations with session-based memory management for coherent multi-turn dialogues
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Session persistence</li>
+                        <li><i class="fas fa-check"></i> Context preservation</li>
+                        <li><i class="fas fa-check"></i> Follow-up handling</li>
+                        <li><i class="fas fa-check"></i> History management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">System Architecture</h2>
+                <p class="section-description">
+                    Modular, scalable architecture with clear separation of concerns and production-ready design patterns
+                </p>
+            </div>
+
+            <!-- High-Level Architecture -->
+            <div class="architecture-block">
+                <h3 class="subsection-title">
+                    <i class="fas fa-sitemap"></i> High-Level Architecture
+                </h3>
+                <div class="diagram-container">
+                    <pre class="mermaid">
+graph TB
+    subgraph "Client Layer"
+        A[React Web App<br/>Port 3000]
+        B[CLI Interface]
+        C[Jupyter Notebook]
+        D[HTTP/WebSocket Client]
+    end
+
+    subgraph "API Gateway Layer"
+        E[Flask + SocketIO<br/>Port 5000]
+        F[REST Endpoints]
+        G[WebSocket Handler]
+    end
+
+    subgraph "Processing Layer"
+        H[Advanced RAG Engine]
+        I[4 Retrieval Strategies]
+        J[Cross-Encoder Reranker]
+        K[Memory Manager]
+    end
+
+    subgraph "AI/ML Layer"
+        L[Ollama LLM<br/>llama2]
+        M[HuggingFace Embeddings<br/>all-MiniLM-L6-v2]
+        N[Vector Store<br/>ChromaDB + FAISS]
+    end
+
+    subgraph "Backend Services"
+        O[Express API<br/>Port 3456]
+        P[MongoDB]
+        Q[Swagger Docs]
+    end
+
+    A --> E
+    B --> H
+    C --> H
+    D --> E
+
+    E --> F
+    E --> G
+    F --> H
+    G --> H
+
+    H --> I
+    H --> J
+    H --> K
+    H --> L
+    H --> M
+    H --> N
+    H --> O
+
+    O --> P
+    O --> Q
+
+    style A fill:#2196f3,color:#fff
+    style E fill:#4caf50,color:#fff
+    style H fill:#ff9800,color:#fff
+    style L fill:#f44336,color:#fff
+    style O fill:#00bcd4,color:#fff
+                    </pre>
+                </div>
+            </div>
+
+            <!-- RAG Processing Pipeline -->
+            <div class="architecture-block">
+                <h3 class="subsection-title">
+                    <i class="fas fa-project-diagram"></i> RAG Processing Pipeline
+                </h3>
+                <div class="diagram-container">
+                    <pre class="mermaid">
+graph TB
+    A[User Query] --> B{Query Type Detection}
+    
+    B -->|Greeting| C[Return Preset Response]
+    B -->|Complex Query| D[Document Retrieval]
+    
+    D --> E[Vector Search<br/>Top-K Similarity]
+    E --> F[Entity Extraction]
+    F --> G{Extract Entities}
+    
+    G -->|Person| H[Call Team API]
+    G -->|Company| I[Call Investments API]
+    G -->|Sector| J[Call Sectors API]
+    G -->|URL| K[Call Scrape API]
+    
+    H --> L[Aggregate API Data]
+    I --> L
+    J --> L
+    K --> L
+    
+    L --> M[Build LLM Prompt]
+    E --> M
+    N[Conversation History] --> M
+    
+    M --> O[Ollama LLM<br/>Generate Response]
+    O --> P[Update History]
+    P --> Q[Return Response]
+    
+    C --> Q
+    
+    style A fill:#e3f2fd,color:#000
+    style G fill:#fff3e0,color:#000
+    style O fill:#e8f5e9,color:#000
+    style Q fill:#f3e5f5,color:#000
+                    </pre>
+                </div>
+            </div>
+
+            <!-- Multi-Strategy Retrieval -->
+            <div class="architecture-block">
+                <h3 class="subsection-title">
+                    <i class="fas fa-search"></i> Multi-Strategy Retrieval System
+                </h3>
+                <div class="diagram-container">
+                    <pre class="mermaid">
+graph TD
+    START[User Query] --> STRATEGY{Select Strategy}
+    
+    STRATEGY -->|Semantic| S1[Vector Similarity<br/>ChromaDB Search]
+    STRATEGY -->|Hybrid| S2[Ensemble<br/>50% Vector + 50% BM25]
+    STRATEGY -->|Multi-Query| S3[Generate Variations<br/>Retrieve All]
+    STRATEGY -->|Decomposed| S4[Break into Sub-Queries<br/>Retrieve Each]
+    
+    S1 --> DOCS1[Retrieved Documents]
+    S2 --> DOCS2[Retrieved Documents]
+    S3 --> DOCS3[Retrieved Documents]
+    S4 --> DOCS4[Retrieved Documents]
+    
+    DOCS1 --> RERANK[Cross-Encoder<br/>Re-Ranking]
+    DOCS2 --> RERANK
+    DOCS3 --> RERANK
+    DOCS4 --> RERANK
+    
+    RERANK --> TOP[Top-K Documents<br/>Sorted by Relevance]
+    TOP --> LLM[Generate Response<br/>with Citations]
+    
+    style START fill:#e3f2fd,color:#000
+    style STRATEGY fill:#fff3e0,color:#000
+    style RERANK fill:#fce4ec,color:#000
+    style LLM fill:#e8f5e9,color:#000
+                    </pre>
+                </div>
+                <div class="strategy-comparison">
+                    <div class="comparison-card">
+                        <h4><i class="fas fa-brain"></i> Semantic Search</h4>
+                        <p>Best for conceptual questions and finding semantically similar content</p>
+                        <span class="tag">General Purpose</span>
+                    </div>
+                    <div class="comparison-card">
+                        <h4><i class="fas fa-balance-scale"></i> Hybrid Search</h4>
+                        <p>Combines semantic + keyword (BM25) for balanced results</p>
+                        <span class="tag">Recommended</span>
+                    </div>
+                    <div class="comparison-card">
+                        <h4><i class="fas fa-expand-arrows-alt"></i> Multi-Query</h4>
+                        <p>Generates query variations for comprehensive coverage</p>
+                        <span class="tag">Exploratory</span>
+                    </div>
+                    <div class="comparison-card">
+                        <h4><i class="fas fa-puzzle-piece"></i> Decomposition</h4>
+                        <p>Breaks complex questions into sub-queries</p>
+                        <span class="tag">Complex Queries</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technology Stack -->
+            <div class="architecture-block">
+                <h3 class="subsection-title">
+                    <i class="fas fa-cubes"></i> Technology Stack
+                </h3>
+                <div class="diagram-container">
+                    <pre class="mermaid">
+mindmap
+  root((RAG AI System))
+    Frontend
+      React 18
+      TypeScript 5.7
+      Material-UI 6
+      Socket.IO Client
+      Vite
+    Backend API
+      Flask 3.1
+      Flask-SocketIO
+      Flask-CORS
+      Python 3.10+
+    RAG Engine
+      LangChain 0.3
+      ChromaDB
+      Sentence Transformers
+      Cross-Encoders
+      BM25Okapi
+    AI/ML
+      Ollama
+      llama2 Model
+      all-MiniLM-L6-v2
+      ms-marco-MiniLM
+    Services
+      Express.js
+      MongoDB
+      Swagger
+      Node.js
+    DevOps
+      Docker
+      Docker Compose
+      Nginx
+      Redis
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technologies Section -->
+    <section id="technologies" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Technologies & Stack</h2>
+                <p class="section-description">
+                    Built with cutting-edge technologies and industry-standard tools
+                </p>
+            </div>
+            
+            <div class="tech-categories">
+                <div class="tech-category">
+                    <h3 class="tech-category-title">
+                        <i class="fas fa-laptop-code"></i> Frontend
+                    </h3>
+                    <div class="tech-badges">
+                        <span class="tech-badge" style="--badge-color: #61DAFB">
+                            <i class="fab fa-react"></i> React 18
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #3178C6">
+                            <i class="fab fa-js"></i> TypeScript 5.7
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #0081CB">
+                            <i class="fas fa-palette"></i> Material-UI 6
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #646CFF">
+                            <i class="fas fa-bolt"></i> Vite
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #010101">
+                            <i class="fas fa-plug"></i> Socket.IO Client
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tech-category">
+                    <h3 class="tech-category-title">
+                        <i class="fas fa-server"></i> Backend
+                    </h3>
+                    <div class="tech-badges">
+                        <span class="tech-badge" style="--badge-color: #3776AB">
+                            <i class="fab fa-python"></i> Python 3.10+
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #000000">
+                            <i class="fas fa-flask"></i> Flask 3.1
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #68A063">
+                            <i class="fab fa-node-js"></i> Node.js
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #000000">
+                            <i class="fas fa-server"></i> Express.js
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #47A248">
+                            <i class="fas fa-database"></i> MongoDB
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tech-category">
+                    <h3 class="tech-category-title">
+                        <i class="fas fa-robot"></i> AI & ML
+                    </h3>
+                    <div class="tech-badges">
+                        <span class="tech-badge" style="--badge-color: #121212">
+                            <i class="fas fa-link"></i> LangChain 0.3
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #000000">
+                            <i class="fas fa-brain"></i> Ollama
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #FFD21E">
+                            <i class="fas fa-face-smile"></i> HuggingFace
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #FF6584">
+                            <i class="fas fa-database"></i> ChromaDB
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #1D3557">
+                            <i class="fas fa-search"></i> FAISS
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #FF6F61">
+                            <i class="fas fa-vector-square"></i> Sentence Transformers
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tech-category">
+                    <h3 class="tech-category-title">
+                        <i class="fas fa-tools"></i> DevOps & Deployment
+                    </h3>
+                    <div class="tech-badges">
+                        <span class="tech-badge" style="--badge-color: #2496ED">
+                            <i class="fab fa-docker"></i> Docker
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #2496ED">
+                            <i class="fas fa-layer-group"></i> Docker Compose
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #009639">
+                            <i class="fas fa-server"></i> Nginx
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #DC382D">
+                            <i class="fas fa-memory"></i> Redis
+                        </span>
+                        <span class="tech-badge" style="--badge-color: #85EA2D">
+                            <i class="fas fa-file-code"></i> Swagger
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Quick Start Guide</h2>
+                <p class="section-description">
+                    Get up and running in minutes with Docker Compose or local development setup
+                </p>
+            </div>
+
+            <div class="quickstart-tabs">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="docker">
+                        <i class="fab fa-docker"></i> Docker Compose
+                    </button>
+                    <button class="tab-button" data-tab="local">
+                        <i class="fas fa-laptop-code"></i> Local Setup
+                    </button>
+                    <button class="tab-button" data-tab="colab">
+                        <i class="fab fa-google"></i> Google Colab
+                    </button>
+                </div>
+
+                <div class="tab-content active" id="docker-tab">
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Clone Repository</h4>
+                                <pre><code class="language-bash">git clone https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support.git
+cd RAG-AI-System-Portfolio-Support</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Start All Services</h4>
+                                <pre><code class="language-bash"># Start all services with Docker Compose
+docker-compose up -d
+
+# Wait for services to initialize (~2 minutes)
+# View logs
+docker-compose logs -f</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Access the Application</h4>
+                                <ul class="access-list">
+                                    <li><i class="fas fa-desktop"></i> <strong>React Frontend:</strong> <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                                    <li><i class="fas fa-flask"></i> <strong>Flask API:</strong> <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+                                    <li><i class="fas fa-server"></i> <strong>Express Backend:</strong> <a href="http://localhost:3456/docs" target="_blank">http://localhost:3456/docs</a></li>
+                                    <li><i class="fas fa-database"></i> <strong>MongoDB:</strong> localhost:27017</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Test the System</h4>
+                                <pre><code class="language-bash"># Test Flask API health
+curl http://localhost:5000/health
+
+# Send a chat message
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are PeakSpan MasterClasses about?", "strategy": "hybrid"}'</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="local-tab">
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Install Ollama</h4>
+                                <pre><code class="language-bash"># Install Ollama (macOS/Linux)
+curl https://ollama.ai/install.sh | sh
+
+# Start Ollama server
+ollama serve &
+
+# Pull llama2 model
+ollama pull llama2</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Setup Backend (Express)</h4>
+                                <pre><code class="language-bash">cd backend
+npm install
+
+# Create .env file
+echo "MONGO_URI=mongodb://localhost:27017/rag_db" > .env
+echo "PORT=3456" >> .env
+
+# Start backend
+npm start</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Setup RAG Application (Python)</h4>
+                                <pre><code class="language-bash">cd ..
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Setup Frontend (React)</h4>
+                                <pre><code class="language-bash">cd frontend
+npm install
+npm run dev</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="colab-tab">
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Open Google Colab Notebook</h4>
+                                <p>Open the notebook in Google Colab with GPU runtime (T4 recommended)</p>
+                                <a href="https://colab.research.google.com/drive/1rIYsnLwLvSit4Xf7VyT_IIFyDFlohyH7" class="btn btn-primary" target="_blank">
+                                    <i class="fab fa-google"></i> Open in Colab
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Install Dependencies</h4>
+                                <pre><code class="language-python"># Install colab-xterm for terminal access
+!pip install colab-xterm
+%load_ext colabxterm
+
+# Launch terminal
+%xterm</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Install Ollama in Terminal</h4>
+                                <pre><code class="language-bash"># In the XTerm terminal
+curl https://ollama.ai/install.sh | sh
+ollama serve &
+ollama pull llama2</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Run RAG System</h4>
+                                <pre><code class="language-python"># Install Python packages
+!pip install langchain_community faiss-cpu sentence-transformers requests flask pyngrok
+
+# Run the RAG script (provided in notebook)
+# The script will download documents, build vector store, and start interactive chat</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Live Demo & Examples</h2>
+                <p class="section-description">
+                    Try the live system or explore example queries and responses
+                </p>
+            </div>
+
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <div class="demo-header">
+                        <i class="fas fa-comments"></i>
+                        <h3>Example Conversations</h3>
+                    </div>
+                    <div class="conversation">
+                        <div class="message user-message">
+                            <div class="message-icon"><i class="fas fa-user"></i></div>
+                            <div class="message-content">
+                                <strong>User:</strong> What are PeakSpan MasterClasses about?
+                            </div>
+                        </div>
+                        <div class="message ai-message">
+                            <div class="message-icon"><i class="fas fa-robot"></i></div>
+                            <div class="message-content">
+                                <strong>AI:</strong> PeakSpan MasterClasses are educational sessions focused on helping B2B SaaS companies scale. 
+                                They cover topics like leadership, go-to-market strategies, product development, and operational excellence. 
+                                The program brings together industry experts and portfolio companies to share insights and best practices.
+                                <div class="sources">
+                                    <strong>Sources:</strong>
+                                    <span class="source-tag">MasterClass_Overview.txt (0.92)</span>
+                                    <span class="source-tag">Leadership_Topics.txt (0.88)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conversation">
+                        <div class="message user-message">
+                            <div class="message-icon"><i class="fas fa-user"></i></div>
+                            <div class="message-content">
+                                <strong>User:</strong> Tell me about Scott Varner
+                            </div>
+                        </div>
+                        <div class="message ai-message">
+                            <div class="message-icon"><i class="fas fa-robot"></i></div>
+                            <div class="message-content">
+                                <strong>AI:</strong> Scott Varner is a Managing Partner at PeakSpan Capital. He focuses on investments in the 
+                                technology and software sectors, bringing over 20 years of industry experience. He has held leadership positions 
+                                at companies like Microsoft, IBM, and Oracle, and is known for identifying and supporting high-growth startups. 
+                                He's also committed to diversity and inclusion in tech.
+                                <div class="sources">
+                                    <strong>API Data:</strong>
+                                    <span class="source-tag">Team API</span>
+                                    <span class="source-tag">Insights API</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <div class="demo-header">
+                        <i class="fas fa-code"></i>
+                        <h3>API Examples</h3>
+                    </div>
+                    <div class="api-examples">
+                        <div class="api-example">
+                            <h4>REST API - Chat Endpoint</h4>
+                            <pre><code class="language-bash">curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What investment strategies does PeakSpan use?",
+    "strategy": "hybrid",
+    "session_id": "your-session-id"
+  }'</code></pre>
+                        </div>
+
+                        <div class="api-example">
+                            <h4>WebSocket - Real-time Streaming</h4>
+                            <pre><code class="language-javascript">import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
+
+socket.on('connect', () => {
+  socket.emit('chat_message', {
+    query: 'Tell me about portfolio companies',
+    strategy: 'hybrid'
+  });
+});
+
+socket.on('response_chunk', (data) => {
+  console.log(data.chunk); // Streaming response
+});
+
+socket.on('response_complete', (data) => {
+  console.log('Sources:', data.sources);
+});</code></pre>
+                        </div>
+
+                        <div class="api-example">
+                            <h4>Python SDK Example</h4>
+                            <pre><code class="language-python">from advanced_rag_engine import AdvancedRAGEngine, RAGConfig, RetrievalStrategy
+
+# Initialize engine
+engine = AdvancedRAGEngine(RAGConfig())
+engine.initialize_from_api()
+
+# Query with hybrid search
+result = engine.query(
+    "What are the key leadership topics?",
+    strategy=RetrievalStrategy.HYBRID
+)
+
+print(f"Response: {result['response']}")
+print(f"Sources: {result['sources']}")</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cta-box">
+                <h3><i class="fas fa-rocket"></i> Ready to Try It?</h3>
+                <p>Explore the live demo or deploy your own instance</p>
+                <div class="cta-buttons">
+                    <a href="https://rag-langchain-ai-system.onrender.com" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-globe"></i> Live Demo
+                    </a>
+                    <a href="#quickstart" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Deploy Locally
+                    </a>
+                    <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support" class="btn btn-accent" target="_blank">
+                        <i class="fab fa-github"></i> View Source
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resources Section -->
+    <section id="resources" class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Documentation & Resources</h2>
+                <p class="section-description">
+                    Comprehensive documentation, guides, and learning materials
+                </p>
+            </div>
+
+            <div class="resources-grid">
+                <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/README.md" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fas fa-book"></i></div>
+                    <h3>README</h3>
+                    <p>Complete project documentation with setup instructions and usage examples</p>
+                </a>
+
+                <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/ARCHITECTURE.md" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fas fa-sitemap"></i></div>
+                    <h3>Architecture Guide</h3>
+                    <p>Detailed system architecture, design patterns, and scalability considerations</p>
+                </a>
+
+                <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/QUICKSTART.md" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>Quick Start</h3>
+                    <p>Fast-track guide to get the system running in minutes</p>
+                </a>
+
+                <a href="https://colab.research.google.com/drive/1rIYsnLwLvSit4Xf7VyT_IIFyDFlohyH7" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fab fa-google"></i></div>
+                    <h3>Colab Notebook</h3>
+                    <p>Interactive Google Colab notebook with GPU support</p>
+                </a>
+
+                <a href="https://rag-langchain-ai-system.onrender.com/docs" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fas fa-file-code"></i></div>
+                    <h3>API Documentation</h3>
+                    <p>Swagger/OpenAPI documentation for all backend endpoints</p>
+                </a>
+
+                <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support" class="resource-card" target="_blank">
+                    <div class="resource-icon"><i class="fab fa-github"></i></div>
+                    <h3>GitHub Repository</h3>
+                    <p>Full source code, issues, and contributions</p>
+                </a>
+            </div>
+
+            <div class="learning-resources">
+                <h3><i class="fas fa-graduation-cap"></i> Learning Resources</h3>
+                <p>Additional materials to learn AI/ML concepts and techniques:</p>
+                <div class="learning-grid">
+                    <div class="learning-item">
+                        <i class="fas fa-brain"></i>
+                        <span>Deep Learning & Neural Networks</span>
+                    </div>
+                    <div class="learning-item">
+                        <i class="fas fa-language"></i>
+                        <span>LLM & Mining CX on Social Media</span>
+                    </div>
+                    <div class="learning-item">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Agents & Assistants</span>
+                    </div>
+                    <div class="learning-item">
+                        <i class="fas fa-search"></i>
+                        <span>Retrieval-Augmented Generation</span>
+                    </div>
+                    <div class="learning-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Data Science Pipeline</span>
+                    </div>
+                    <div class="learning-item">
+                        <i class="fas fa-comments"></i>
+                        <span>Textual Analysis</span>
+                    </div>
+                </div>
+                <a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/tree/main/resources" class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-folder-open"></i> Browse Resources
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4><i class="fas fa-robot"></i> RAG AI System</h4>
+                    <p>Advanced Retrieval-Augmented Generation system for portfolio support with production-ready architecture</p>
+                    <div class="social-links">
+                        <a href="https://github.com/hoangsonww" target="_blank" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://linkedin.com/in/hoangsonw" target="_blank" title="LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="https://devverse-swe.vercel.app" target="_blank" title="Blog">
+                            <i class="fas fa-blog"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#architecture">Architecture</a></li>
+                        <li><a href="#quickstart">Quick Start</a></li>
+                        <li><a href="#technologies">Technologies</a></li>
+                        <li><a href="#demo">Demo</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/README.md" target="_blank">README</a></li>
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/ARCHITECTURE.md" target="_blank">Architecture</a></li>
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/QUICKSTART.md" target="_blank">Quick Start</a></li>
+                        <li><a href="https://rag-langchain-ai-system.onrender.com/docs" target="_blank">API Docs</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Project</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support" target="_blank">GitHub Repo</a></li>
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/issues" target="_blank">Issues</a></li>
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/pulls" target="_blank">Pull Requests</a></li>
+                        <li><a href="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support/blob/main/LICENSE" target="_blank">License</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 RAG AI System. Created by <a href="https://github.com/hoangsonww" target="_blank">Son Nguyen</a>. All rights reserved.</p>
+                <p class="footer-tech">Built with <i class="fas fa-heart" style="color: #f44336;"></i> using React, Flask, LangChain, Ollama, and Docker</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="packages/script.js"></script>
+    <script>
+        // Initialize Mermaid with larger, responsive diagrams
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#667eea',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#764ba2',
+                lineColor: '#667eea',
+                secondaryColor: '#4facfe',
+                tertiaryColor: '#f093fb',
+                fontSize: '16px'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            },
+            sequence: {
+                useMaxWidth: true,
+                width: 150
+            },
+            gantt: {
+                useMaxWidth: true
+            }
+        });
+        
+        // Force Mermaid diagrams to render larger
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const mermaidDiagrams = document.querySelectorAll('.mermaid svg');
+                mermaidDiagrams.forEach(svg => {
+                    // Remove any width/height attributes
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    svg.style.width = 'auto';
+                    svg.style.height = 'auto';
+                    
+                    // Set viewBox if not present
+                    if (!svg.getAttribute('viewBox')) {
+                        const bbox = svg.getBBox();
+                        svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+                    }
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1148,7 +1148,7 @@ code[class*="language-"] {
 }
 
 /* ========== Responsive Design ========== */
-@media (max-width: 768px) {
+@media (max-width: 1250px) {
     .nav-menu {
         position: fixed;
         top: 70px;

@@ -659,6 +659,7 @@ a:hover {
 .tab-content {
     display: none;
     padding: var(--spacing-xl);
+    overflow-x: auto; /* Enable horizontal scrolling for tab content */
 }
 
 .tab-content.active {

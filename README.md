@@ -339,7 +339,7 @@ For Windows, download from [ollama.ai](https://ollama.ai).
 
 ## Quick Start
 
-The fastest way to get started is using Docker Compose, which sets up all services automatically.
+The fastest way to get started is using Docker Compose, which sets up all services automatically. You can also follow the manual setup instructions for local development.
 
 ### Option 1: Docker Compose
 
@@ -369,6 +369,9 @@ docker-compose down
 # Stop and remove volumes
 docker-compose down -v
 ```
+
+> [!TIP]
+> Ensure Ollama is running locally before starting the RAG app, as it depends on the Ollama server for LLM generation. Also, make sure Docker is installed and running on your machine.
 
 ### Option 2: Manual Setup
 

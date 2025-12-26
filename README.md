@@ -341,7 +341,7 @@ For Windows, download from [ollama.ai](https://ollama.ai).
 
 The fastest way to get started is using Docker Compose, which sets up all services automatically.
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose
 
 ```bash
 # Clone the repository
@@ -393,14 +393,14 @@ curl -X POST http://localhost:5000/api/chat \
 
 ```
 RAG-AI-System-Portfolio-Support/
-├── frontend/                   # React + TypeScript web interface
+├── frontend/                 # React + TypeScript web interface
 │   ├── src/
-│   │   ├── components/        # React components
+│   │   ├── components/       # React components
 │   │   ├── App.tsx           # Main application
 │   │   └── main.tsx          # Entry point
 │   ├── package.json
 │   └── Dockerfile
-├── backend/                   # Express API server
+├── backend/                  # Express API server
 │   ├── src/
 │   │   ├── routes/           # API routes
 │   │   ├── models/           # MongoDB models
@@ -415,8 +415,8 @@ RAG-AI-System-Portfolio-Support/
 ├── docker-compose.yml        # Docker orchestration
 ├── Dockerfile.rag            # Dockerfile for RAG app
 ├── ARCHITECTURE.md           # Detailed architecture documentation
-├── QUICKSTART.md            # Quick start guide
-└── README.md                # This file
+├── QUICKSTART.md             # Quick start guide
+└── README.md                 # This file
 ```
 
 ## Retrieval Strategies

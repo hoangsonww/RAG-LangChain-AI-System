@@ -339,9 +339,9 @@ For Windows, download from [ollama.ai](https://ollama.ai).
 
 ## Quick Start
 
-The fastest way to get started is using Docker Compose, which sets up all services automatically.
+The fastest way to get started is using Docker Compose, which sets up all services automatically. You can also follow the manual setup instructions for local development.
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose
 
 ```bash
 # Clone the repository
@@ -370,6 +370,9 @@ docker-compose down
 docker-compose down -v
 ```
 
+> [!TIP]
+> Ensure Ollama is running locally before starting the RAG app, as it depends on the Ollama server for LLM generation. Also, make sure Docker is installed and running on your machine.
+
 ### Option 2: Manual Setup
 
 See the [Deployment Options](#deployment-options) section below for detailed local development setup instructions.
@@ -393,14 +396,14 @@ curl -X POST http://localhost:5000/api/chat \
 
 ```
 RAG-AI-System-Portfolio-Support/
-├── frontend/                   # React + TypeScript web interface
+├── frontend/                 # React + TypeScript web interface
 │   ├── src/
-│   │   ├── components/        # React components
+│   │   ├── components/       # React components
 │   │   ├── App.tsx           # Main application
 │   │   └── main.tsx          # Entry point
 │   ├── package.json
 │   └── Dockerfile
-├── backend/                   # Express API server
+├── backend/                  # Express API server
 │   ├── src/
 │   │   ├── routes/           # API routes
 │   │   ├── models/           # MongoDB models
@@ -415,8 +418,8 @@ RAG-AI-System-Portfolio-Support/
 ├── docker-compose.yml        # Docker orchestration
 ├── Dockerfile.rag            # Dockerfile for RAG app
 ├── ARCHITECTURE.md           # Detailed architecture documentation
-├── QUICKSTART.md            # Quick start guide
-└── README.md                # This file
+├── QUICKSTART.md             # Quick start guide
+└── README.md                 # This file
 ```
 
 ## Retrieval Strategies

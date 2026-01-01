@@ -2,3 +2,7 @@
 /backend/.env
 /.venv/
 /frontend/node_modules/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars

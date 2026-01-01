@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: rag-system
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - pvc.yaml
+  - mongodb-statefulset.yaml
+  - redis-statefulset.yaml
+  - backend-deployment.yaml
+  - rag-app-deployment.yaml
+  - frontend-deployment.yaml
+  - services.yaml
+  - ingress.yaml

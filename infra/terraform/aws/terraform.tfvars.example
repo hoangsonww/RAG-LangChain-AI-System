@@ -1,0 +1,14 @@
+region                  = "us-east-1"
+project                 = "rag-system"
+cluster_name            = "rag-system"
+vpc_cidr                = "10.0.0.0/16"
+public_subnet_cidrs     = ["10.0.0.0/20", "10.0.16.0/20", "10.0.32.0/20"]
+private_subnet_cidrs    = ["10.0.48.0/20", "10.0.64.0/20", "10.0.80.0/20"]
+node_group_instance_types = ["t3.large"]
+node_group_desired_size = 2
+node_group_min_size     = 1
+node_group_max_size     = 4
+tags = {
+  Environment = "production"
+  Project     = "rag-system"
+}

@@ -520,9 +520,9 @@ a:hover {
 
 .diagram-container pre {
     margin: 0 auto;
-    display: block;
+    display: inline-block;
     text-align: center;
-    width: 100%;
+    width: auto;
 }
 
 .strategy-comparison {
@@ -1278,50 +1278,22 @@ code[class*="language-"] {
     justify-content: center;
     align-items: center;
     margin: 0 auto;
-    width: 100%;
+    width: fit-content;
     min-height: 400px;
 }
 
 .mermaid svg {
-    max-width: 100%;
-    width: auto !important;
-    height: auto !important;
-    min-width: 600px;
+    width: auto;
+    height: auto;
+    max-width: none;
+    min-width: 0;
     display: block;
     margin: 0 auto;
     transform-origin: center;
 }
 
-/* Responsive Mermaid sizing */
-@media (min-width: 1400px) {
-    .mermaid svg {
-        min-width: 900px;
-        max-width: 1200px;
-    }
-}
-
-@media (min-width: 1024px) and (max-width: 1399px) {
-    .mermaid svg {
-        min-width: 700px;
-        max-width: 1000px;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-    .mermaid svg {
-        min-width: 500px;
-        max-width: 700px;
-    }
-}
-
 @media (max-width: 767px) {
     .mermaid {
         min-height: 300px;
-    }
-    
-    .mermaid svg {
-        min-width: 100%;
-        max-width: 100%;
-        width: 100% !important;
     }
 }

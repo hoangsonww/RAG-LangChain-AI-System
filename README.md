@@ -646,6 +646,10 @@ docker-compose up -d --build
 - MongoDB (Port 27017)
 - Redis cache (Port 6379)
 
+### Kubernetes + Terraform (AWS and OCI)
+
+For production-ready cloud deployments (EKS/OKE, Kustomize overlays, and Terraform scaffolding), see `deploy/README.md`.
+
 ### Google Colab Deployment
 
 Run the RAG system in Google Colab with GPU support for better performance.

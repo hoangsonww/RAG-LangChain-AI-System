@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-app
+  namespace: rag-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-app
+  template:
+    metadata:
+      labels:
+        app: rag-app
+    spec:
+      initContainers:
+        - name: init-rag-storage
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /data/chroma_db /data/uploads /data/logs"]
+          volumeMounts:
+            - name: rag-app-data
+              mountPath: /data
+      containers:
+        - name: rag-app
+          image: ghcr.io/your-org/rag-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: API_BASE_URL
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: rag-secrets
+                  key: API_TOKEN
+            - name: FLASK_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: FLASK_ENV
+          command: ["gunicorn"]
+          args:
+            - "-w"
+            - "2"
+            - "-b"
+            - "0.0.0.0:5000"
+            - "--timeout"
+            - "120"
+            - "app:app"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: rag-app-data
+              mountPath: /app/chroma_db
+              subPath: chroma_db
+            - name: rag-app-data
+              mountPath: /app/uploads
+              subPath: uploads
+            - name: rag-app-data
+              mountPath: /app/logs
+              subPath: logs
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+      volumes:
+        - name: rag-app-data
+          persistentVolumeClaim:
+            claimName: rag-app-data

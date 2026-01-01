@@ -392,50 +392,6 @@ graph TD
                 </div>
             </div>
 
-            <!-- Technology Stack -->
-            <div class="architecture-block">
-                <h3 class="subsection-title">
-                    <i class="fas fa-cubes"></i> Technology Stack
-                </h3>
-                <div class="diagram-container">
-                    <pre class="mermaid">
-mindmap
-  root((RAG AI System))
-    Frontend
-      React 18
-      TypeScript 5.7
-      Material-UI 6
-      Socket.IO Client
-      Vite
-    Backend API
-      Flask 3.1
-      Flask-SocketIO
-      Flask-CORS
-      Python 3.10+
-    RAG Engine
-      LangChain 0.3
-      ChromaDB
-      Sentence Transformers
-      Cross-Encoders
-      BM25Okapi
-    AI/ML
-      Ollama
-      llama2 Model
-      all-MiniLM-L6-v2
-      ms-marco-MiniLM
-    Services
-      Express.js
-      MongoDB
-      Swagger
-      Node.js
-    DevOps
-      Docker
-      Docker Compose
-      Nginx
-      Redis
-                    </pre>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -1037,20 +993,21 @@ print(f"Sources: {result['sources']}")</code></pre>
                 lineColor: '#667eea',
                 secondaryColor: '#4facfe',
                 tertiaryColor: '#f093fb',
-                fontSize: '16px'
+                fontSize: '16px',
+                fontFamily: 'Inter, sans-serif'
             },
             flowchart: {
-                useMaxWidth: true,
+                useMaxWidth: false,
                 htmlLabels: true,
                 curve: 'basis',
                 padding: 20
             },
             sequence: {
-                useMaxWidth: true,
+                useMaxWidth: false,
                 width: 150
             },
             gantt: {
-                useMaxWidth: true
+                useMaxWidth: false
             }
         });
         
@@ -1059,12 +1016,6 @@ print(f"Sources: {result['sources']}")</code></pre>
             setTimeout(() => {
                 const mermaidDiagrams = document.querySelectorAll('.mermaid svg');
                 mermaidDiagrams.forEach(svg => {
-                    // Remove any width/height attributes
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
-                    svg.style.width = 'auto';
-                    svg.style.height = 'auto';
-                    
                     // Set viewBox if not present
                     if (!svg.getAttribute('viewBox')) {
                         const bbox = svg.getBBox();

@@ -5,6 +5,7 @@ This folder contains Kubernetes manifests and Terraform infrastructure to deploy
 ## What is included
 
 - `deploy/k8s` Kustomize base + overlays for AWS and OCI
+- `deploy/docs` Runbooks and production guidance
 - `infra/terraform/aws` EKS + VPC + ECR scaffolding
 - `infra/terraform/oci` OKE + VCN scaffolding
 

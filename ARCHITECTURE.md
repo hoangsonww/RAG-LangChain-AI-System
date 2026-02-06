@@ -45,6 +45,12 @@ This document is the technical source of truth for system design, runtime behavi
 - Deployable across local Docker, AWS EKS, and OCI OKE.
 - Progressive delivery support (rolling/canary/blue-green).
 
+### Overall RAG System Design Illustration
+
+<p align="center">
+  <img src="resources/RAG_System_Diagram.JPG" alt="RAG System Diagram" width="100%"/>
+</p>
+
 ---
 
 ## Technology Stack

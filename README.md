@@ -8,6 +8,10 @@ This repository ships a complete application stack:
 - `backend` (`Express + MongoDB`) for structured portfolio data APIs used by tool chaining.
 - Deployment and operations assets for Docker, Kubernetes, progressive delivery, and Terraform.
 
+<p align="center">
+  <img src="resources/RAG_System_Diagram.JPG" alt="RAG System Diagram" width="100%"/>
+</p>
+
 ---
 
 ## Table Of Contents
@@ -27,7 +31,7 @@ This repository ships a complete application stack:
 13. [Production Governance And Release Decision Model](#production-governance-and-release-decision-model)
 14. [Testing And Quality Gates](#testing-and-quality-gates)
 15. [Security And Production Notes](#security-and-production-notes)
-16. [Known Constraints](#known-constraints)
+16. [Further Reading & Resources](#further-reading--resources)
 17. [Documentation Index](#documentation-index)
 
 ---
@@ -640,6 +644,8 @@ Primary release controls:
 
 ## Testing And Quality Gates
 
+We provide a unified test and quality gate script for local and CI use. It comprehensively runs all unit tests, type checks, and production builds for both backend and frontend components.
+
 ### Unified Gate
 
 ```bash
@@ -670,12 +676,24 @@ scripts/system.sh smoke
 
 ---
 
-## Known Constraints
+## Further Reading & Resources
 
-- In-memory session, cache, and rate limit state are not shared across replicas.
-- `rag-app` persistence assumptions require storage/session externalization for horizontally scaled, state-consistent production setups.
-- Progressive delivery overlays require Argo Rollouts controller + kubectl plugin.
-- Default LLM path uses Ollama integration; ensure model runtime availability in your target environment.
+If you want to learn more about the concepts and technologies used in this project, as well as essential AI and RAG principles, check out the following resources:
+
+- [AI Agents & Assistants](resources/AI_Agents_Assistants.ipynb)
+- [AI and Businesses](resources/AI_and_Businesses.ipynb)
+- [Confusion Matrix for LLM Outputs](resources/Confusion_Matrix.ipynb)
+- [Data Science Pipeline with a Business Problem](resources/Data_Science_Pipeline.ipynb)
+- [Decision Trees & Ensemble Learning](resources/Decision_Trees_Ensemble_Learning.ipynb)
+- [Deep Learning & Neural Networks](resources/Deep_Learning_Neural_Networks.ipynb)
+- [k-Nearest Neighbors Algorithm](resources/k-Nearest-Neighbors.ipynb)
+- [LLM Mining for Customer Experience](resources/LLM_Mining_CX.ipynb)
+- [Regression Analysis & Linear Models](resources/Regression.ipynb)
+- [Representation Learning & Dimensionality Reduction for Recommender Systems](resources/Representation_Learning_Recommender.ipynb)
+- [Retrieval Augmented Generation (RAG) Concepts](resources/Retrieval_Augmented_Generation.ipynb)
+- [Unstructured Data Textual Analysis](resources/Unstructured_Data_Textual_Analysis.ipynb)
+- [Storytelling with Data](resources/Storytelling_with_Data.pdf)
+- [Synthetic Experts](resources/Synthetic_Experts.pdf)
 
 ---
 

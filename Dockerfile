@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-LABEL org.opencontainers.image.source="https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support"
+LABEL org.opencontainers.image.source="https://github.com/hoangsonww/RAG-LangChain-AI-System"
 LABEL org.opencontainers.image.description="Production container for the RAG AI Portfolio Support service"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

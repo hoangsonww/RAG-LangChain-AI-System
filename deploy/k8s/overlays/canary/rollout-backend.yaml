@@ -1,0 +1,78 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: backend
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    canary:
+      maxUnavailable: 0
+      maxSurge: 25%
+      steps:
+        - setWeight: 20
+        - pause:
+            duration: 120s
+        - setWeight: 40
+        - pause:
+            duration: 180s
+        - setWeight: 60
+        - pause:
+            duration: 180s
+        - setWeight: 100
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/component: api
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: backend
+          image: ghcr.io/your-org/rag-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3456
+              name: http
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: rag-secrets
+                  key: MONGO_URI
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: BACKEND_PORT
+          startupProbe:
+            httpGet:
+              path: /auth/token
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /auth/token
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /auth/token
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

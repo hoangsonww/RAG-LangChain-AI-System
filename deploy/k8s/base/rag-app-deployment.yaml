@@ -2,17 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rag-app
-  namespace: rag-system
 spec:
   replicas: 1
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
       app: rag-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: rag-app
+        app.kubernetes.io/name: rag-app
+        app.kubernetes.io/component: rag-api
     spec:
+      terminationGracePeriodSeconds: 45
       initContainers:
         - name: init-rag-storage
           image: busybox:1.36
@@ -26,6 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
+              name: http
           env:
             - name: API_BASE_URL
               valueFrom:
@@ -42,27 +51,75 @@ spec:
                 configMapKeyRef:
                   name: rag-config
                   key: FLASK_ENV
-          command: ["gunicorn"]
-          args:
-            - "-w"
-            - "2"
-            - "-b"
-            - "0.0.0.0:5000"
-            - "--timeout"
-            - "120"
-            - "app:app"
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: APP_ENVIRONMENT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: LOG_LEVEL
+            - name: ENABLE_GATEWAY_AUTH
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: ENABLE_GATEWAY_AUTH
+            - name: API_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: rag-secrets
+                  key: API_GATEWAY_TOKEN
+            - name: ENABLE_RATE_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: ENABLE_RATE_LIMIT
+            - name: RATE_LIMIT_REQUESTS_PER_MINUTE
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: RATE_LIMIT_REQUESTS_PER_MINUTE
+            - name: MAX_QUERY_CHARS
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: MAX_QUERY_CHARS
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-config
+                  key: CORS_ORIGINS
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rag-secrets
+                  key: SECRET_KEY
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
           readinessProbe:
             httpGet:
-              path: /health
-              port: 5000
-            initialDelaySeconds: 10
+              path: /readyz
+              port: http
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /health
-              port: 5000
-            initialDelaySeconds: 20
+              path: /livez
+              port: http
             periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
           volumeMounts:
             - name: rag-app-data
               mountPath: /app/chroma_db
@@ -75,11 +132,11 @@ spec:
               subPath: logs
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "500m"
+              memory: "768Mi"
             limits:
-              cpu: "1"
-              memory: "2Gi"
+              cpu: "2"
+              memory: "3Gi"
       volumes:
         - name: rag-app-data
           persistentVolumeClaim:

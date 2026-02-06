@@ -1,390 +1,470 @@
-# Quick Start Guide - Advanced RAG AI System
+# RAG AI Portfolio Support Platform: Quickstart And Validation Runbook
 
-Get up and running in minutes with this comprehensive quick start guide.
+This guide is the operator runbook for standing up, validating, and troubleshooting the entire platform in local or pre-production environments.
+
+Use this document when you need a deterministic path from **clean machine -> healthy stack -> validated chat flow**.
+
+---
+
+## Table Of Contents
+
+1. [Execution Paths](#execution-paths)
+2. [Prerequisites](#prerequisites)
+3. [Preflight Checks](#preflight-checks)
+4. [Path A: Unified Script CLI (recommended)](#path-a-unified-script-cli-recommended)
+5. [Path B: Docker Compose](#path-b-docker-compose)
+6. [Path C: Manual 3-Terminal Local Dev](#path-c-manual-3-terminal-local-dev)
+7. [API Validation Checklist](#api-validation-checklist)
+8. [Frontend Validation Checklist](#frontend-validation-checklist)
+9. [Deployment Quick Ops](#deployment-quick-ops)
+10. [Troubleshooting Playbook](#troubleshooting-playbook)
+11. [Production Promotion Readiness](#production-promotion-readiness)
+
+---
+
+## Execution Paths
+
+```mermaid
+flowchart TD
+    START[Start Here] --> Q1{Need quickest reliable local workflow?}
+    Q1 -->|Yes| A[Path A: scripts/system.sh]
+    Q1 -->|No| Q2{Need full containerized stack?}
+    Q2 -->|Yes| B[Path B: Docker Compose]
+    Q2 -->|No| C[Path C: Manual 3 terminals]
+
+    A --> V[Run health + smoke]
+    B --> V
+    C --> V
+
+    V --> PASS{Checks pass?}
+    PASS -->|Yes| DONE[Ready for dev/testing]
+    PASS -->|No| TROUBLE[Use Troubleshooting section]
+```
+
+---
 
 ## Prerequisites
 
-- **Python 3.10+**
-- **Node.js 18+**
-- **Docker & Docker Compose** (for containerized deployment)
-- **MongoDB** (if running backend locally)
-- **Ollama** with llama2 model (for LLM)
+### Required
 
-## Quick Start Options
+- `python3` 3.10+
+- `node` 18+
+- `npm`
+- `curl`
+- `jq`
 
-### Option 1: Docker Compose (Recommended) ⚡
+### Required for Docker path
 
-The fastest way to get everything running:
+- Docker Engine + Docker Compose plugin (`docker compose`)
+
+### Required for deployment path
+
+- `kubectl`
+- `kustomize` (optional if using only `kubectl apply -k`)
+- `kubectl argo rollouts` plugin (for canary/blue-green actions)
+
+### Model runtime note
+
+Current RAG engine is configured with Ollama-style model usage by default (`llm_model=llama2` in `rag_system/config.py`).
+Ensure your target environment provides reachable model inference runtime before expecting successful generation responses.
+
+---
+
+## Preflight Checks
+
+From repo root:
 
 ```bash
-# Clone the repository
-git clone https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support.git
-cd RAG-AI-System-Portfolio-Support
-
-# Start all services with Docker Compose
-docker-compose up -d
-
-# Wait for services to initialize (~2 minutes)
-# Then open your browser
+scripts/system.sh help
+scripts/system.sh test
 ```
 
-**Access the application:**
-- **Frontend**: http://localhost:3000
-- **Flask API**: http://localhost:5000
-- **Express Backend**: http://localhost:3456/docs
-- **MongoDB**: localhost:27017
+What `scripts/system.sh test` validates:
+- Python tests
+- backend TypeScript compilation
+- frontend typecheck
+- frontend production build
+
+If this fails, fix build/test errors before starting runtime services.
+
+---
+
+## Path A: Unified Script CLI (recommended)
+
+This is the fastest way to operate local lifecycle consistently.
+
+### 1) Install dependencies
 
 ```bash
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes
-docker-compose down -v
+scripts/system.sh setup
 ```
 
-### Option 2: Local Development Setup 🛠️
-
-For development and testing:
-
-#### Step 1: Install Ollama and LLM
+### 2) Start all services
 
 ```bash
-# Install Ollama (macOS/Linux)
-curl https://ollama.ai/install.sh | sh
-
-# Start Ollama
-ollama serve &
-
-# Pull the llama2 model
-ollama pull llama2
-
-# Verify installation
-ollama list
+scripts/system.sh dev-up --setup
+scripts/system.sh dev-status
 ```
 
-#### Step 2: Setup Backend (Express)
+Expected services:
+- `backend`
+- `rag-app`
+- `frontend`
+
+### 3) Tail logs
 
 ```bash
-# Navigate to backend directory
+scripts/system.sh dev-logs all -f
+```
+
+### 4) Run checks
+
+```bash
+scripts/system.sh health
+scripts/system.sh smoke
+```
+
+### 5) Stop services
+
+```bash
+scripts/system.sh dev-down
+```
+
+### Local lifecycle diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Op as Operator
+    participant Sys as scripts/system.sh
+    participant B as backend
+    participant R as rag-app
+    participant F as frontend
+
+    Op->>Sys: setup
+    Sys->>B: npm ci/install
+    Sys->>R: pip install -r requirements.txt
+    Sys->>F: npm ci/install
+
+    Op->>Sys: dev-up --setup
+    Sys->>B: start background process
+    Sys->>R: start background process
+    Sys->>F: start background process
+
+    Op->>Sys: health
+    Sys->>R: /health /livez /readyz /api/tools
+    Sys->>B: /auth/token
+    Sys->>F: /
+
+    Op->>Sys: smoke
+    Sys->>R: session + chat + completions
+```
+
+---
+
+## Path B: Docker Compose
+
+Use this path when you want network-isolated service wiring.
+
+### 1) Start stack
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+### 2) Monitor runtime
+
+```bash
+docker compose logs -f backend
+docker compose logs -f rag-app
+docker compose logs -f frontend
+```
+
+### 3) Validate
+
+```bash
+scripts/system.sh health
+scripts/system.sh smoke
+```
+
+### 4) Stop stack
+
+```bash
+docker compose down
+# include volumes only when you intentionally want a reset
+# docker compose down -v
+```
+
+### Compose topology
+
+```mermaid
+graph LR
+    Browser --> Frontend[frontend :3000]
+    Frontend --> RAG[rag-app :5000]
+    RAG --> Backend[backend :3456]
+    Backend --> Mongo[(mongodb :27017)]
+    RAG -. optional infra cache .-> Redis[(redis :6379)]
+```
+
+---
+
+## Path C: Manual 3-Terminal Local Dev
+
+Use this path if you need direct control per process.
+
+### Terminal 1: Backend
+
+```bash
 cd backend
-
-# Install dependencies
+cp .env.example .env  # first time only
 npm install
-
-# Create .env file
-cat > .env << EOF
-MONGO_URI=mongodb://localhost:27017/rag_db
-PORT=3456
-EOF
-
-# Start MongoDB (if not using Docker)
-# macOS: brew services start mongodb-community
-# Linux: sudo systemctl start mongod
-
-# Start the backend
-npm start
-```
-
-The Express API will be available at http://localhost:3456
-
-#### Step 3: Setup RAG Application (Python)
-
-```bash
-# Navigate to project root
-cd ..
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# macOS/Linux:
-source venv/bin/activate
-# Windows:
-# venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the Flask application
-python app.py
-```
-
-The Flask API will be available at http://localhost:5000
-
-#### Step 4: Setup Frontend (React)
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
 npm run dev
 ```
 
-The React app will be available at http://localhost:3000
-
-## Quick Test
-
-### Test 1: Check Health
+### Terminal 2: RAG API
 
 ```bash
-# Test Flask API
-curl http://localhost:5000/health
-
-# Test Express API
-curl http://localhost:3456/ping \
-  -H "Authorization: Bearer token"
+# from repository root
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python run.py
 ```
 
-### Test 2: Send a Chat Message
+### Terminal 3: Frontend
 
 ```bash
-# Create a session
-SESSION_ID=$(curl -s -X POST http://localhost:5000/api/session | jq -r '.session_id')
+cd frontend
+npm install
+npm run dev
+```
 
-# Send a message
-curl -X POST http://localhost:5000/api/chat \
+### Manual startup dependency order
+
+```mermaid
+flowchart LR
+    A[Start MongoDB\nlocal or container] --> B[Start backend]
+    B --> C[Start rag-app]
+    C --> D[Start frontend]
+    D --> E[Run health + smoke checks]
+```
+
+---
+
+## API Validation Checklist
+
+### Core health and metadata
+
+```bash
+curl -s http://localhost:5000/health | jq
+curl -s http://localhost:5000/livez | jq
+curl -s http://localhost:5000/readyz | jq
+curl -s http://localhost:5000/api/system/info | jq
+curl -s http://localhost:5000/api/tools | jq
+curl -s http://localhost:5000/openapi.json | jq '.info'
+```
+
+### Session + chat flow
+
+Create session:
+
+```bash
+SESSION_ID=$(curl -s -X POST http://localhost:5000/api/session | jq -r '.session_id')
+echo "$SESSION_ID"
+```
+
+Send chat:
+
+```bash
+curl -s -X POST http://localhost:5000/api/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What are the main topics in PeakSpan MasterClasses?",
-    "session_id": "'$SESSION_ID'",
-    "strategy": "hybrid"
+    "query": "Summarize current portfolio opportunities and risks",
+    "strategy": "hybrid",
+    "session_id": "'"${SESSION_ID}"'"
   }' | jq
 ```
 
-### Test 3: Run Demo Script
+List/load session:
 
 ```bash
-# Run the comprehensive demo
-python demo.py
-
-# Select option 0 to run all demos
-# Or select specific demos (1-7)
+curl -s http://localhost:5000/api/sessions | jq
+curl -s http://localhost:5000/api/session/${SESSION_ID} | jq
 ```
 
-## Usage Examples
-
-### Web Interface
-
-1. **Open http://localhost:3000**
-2. **Select a strategy** from the dropdown (Hybrid is recommended)
-3. **Type your question** in the input field
-4. **Press Enter or click Send**
-5. **Watch the streaming response**
-
-Example queries to try:
-```
-- What are PeakSpan MasterClasses about?
-- Tell me about Scott Varner
-- What investment strategies does PeakSpan use?
-- How do they help companies scale?
-- What are the key leadership topics covered?
-```
-
-### Python API
-
-```python
-from advanced_rag_engine import AdvancedRAGEngine, RAGConfig, RetrievalStrategy
-
-# Initialize
-engine = AdvancedRAGEngine(RAGConfig())
-engine.initialize_from_api()
-
-# Query with hybrid search
-result = engine.query(
-    "What are the four fundamental failures of leadership teams?",
-    strategy=RetrievalStrategy.HYBRID
-)
-
-print(f"Response: {result['response']}")
-print(f"\nSources: {len(result['sources'])}")
-for source in result['sources']:
-    print(f"  - {source['source']}: {source['score']:.2f}")
-```
-
-### REST API
+OpenAI-compatible endpoint:
 
 ```bash
-# Using curl
-curl -X POST http://localhost:5000/api/chat \
+curl -s -X POST http://localhost:5000/api/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "Your question here",
-    "strategy": "hybrid"
-  }'
-
-# Using httpie (if installed)
-http POST http://localhost:5000/api/chat \
-  query="Your question here" \
-  strategy="hybrid"
+    "model": "llama2",
+    "strategy": "hybrid",
+    "session_id": "'"${SESSION_ID}"'",
+    "messages": [
+      {"role": "user", "content": "Provide a concise portfolio update"}
+    ]
+  }' | jq
 ```
 
-### WebSocket (JavaScript)
+### API validation flow
 
-```javascript
-import io from 'socket.io-client';
-
-const socket = io('http://localhost:5000');
-
-socket.on('connect', () => {
-  socket.emit('chat_message', {
-    query: 'What are PeakSpan MasterClasses?',
-    strategy: 'hybrid'
-  });
-});
-
-socket.on('response_chunk', (data) => {
-  process.stdout.write(data.chunk); // Streaming!
-});
-
-socket.on('response_complete', (data) => {
-  console.log('\n\nSources:', data.sources);
-});
+```mermaid
+flowchart TD
+    A[Create Session] --> B[Call /api/chat]
+    B --> C[Call /api/chat/completions]
+    C --> D[List sessions]
+    D --> E[Load session]
+    E --> F{Responses include sources + metadata?}
+    F -->|Yes| PASS[API flow validated]
+    F -->|No| FAIL[Inspect rag-app logs]
 ```
 
-## Configuration
+---
 
-### Customize RAG Settings
+## Frontend Validation Checklist
 
-Edit `advanced_rag_engine.py`:
+At `http://localhost:3000` verify:
 
-```python
-@dataclass
-class RAGConfig:
-    # Model Configuration
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    llm_model: str = "llama2"  # Change to your preferred model
-    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+- Send/receive assistant messages.
+- Strategy selector changes retrieval mode.
+- Session sidebar loads, switches, and deletes sessions.
+- Source cards render with score and preview.
+- Agentic trace panel populates after responses.
+- Health/system panel loads backend tools and runtime metadata.
+- Upload flow accepts allowed file types (`txt`, `md`, `pdf`, `docx`).
+- WebSocket disconnect gracefully falls back to REST behavior.
 
-    # Chunking Configuration
-    chunk_size: int = 1000  # Adjust for your documents
-    chunk_overlap: int = 200
+---
 
-    # Retrieval Configuration
-    top_k: int = 5  # Number of documents to retrieve
-    enable_reranking: bool = True
-    enable_hybrid_search: bool = True
-```
+## Deployment Quick Ops
 
-### Change API Endpoint
-
-Edit the API base URL in `advanced_rag_engine.py`:
-
-```python
-api_base_url: str = "https://rag-langchain-ai-system.onrender.com"
-# Or use local backend:
-# api_base_url: str = "http://localhost:3456"
-```
-
-## Troubleshooting
-
-### Issue: Ollama not found
+### Rollout helper
 
 ```bash
-# Make sure Ollama is installed and running
-ollama serve
+# rolling
+./deploy/scripts/rollout.sh rolling aws apply
+./deploy/scripts/rollout.sh rolling aws status
 
-# Check if model is available
-ollama list
+# canary
+./deploy/scripts/rollout.sh canary aws apply
+./deploy/scripts/rollout.sh canary aws status
+./deploy/scripts/rollout.sh canary aws promote frontend
 
-# Pull model if needed
-ollama pull llama2
+# blue-green
+./deploy/scripts/rollout.sh bluegreen oci apply
+./deploy/scripts/rollout.sh bluegreen oci status
+./deploy/scripts/rollout.sh bluegreen oci promote all
 ```
 
-### Issue: MongoDB connection failed
+### Smoke live endpoint
 
 ```bash
-# Start MongoDB
-# macOS:
-brew services start mongodb-community
-
-# Linux:
-sudo systemctl start mongod
-
-# Verify connection
-mongosh
+./deploy/scripts/smoke-test.sh https://rag.example.com
 ```
 
-### Issue: Port already in use
+### Wrapper equivalents
 
 ```bash
-# Find process using port
-lsof -i :5000  # or :3000, :3456
-
-# Kill process
-kill -9 <PID>
-
-# Or change port in configuration
+scripts/system.sh deploy canary aws apply
+scripts/system.sh deploy canary aws status
+scripts/system.sh deploy-smoke https://rag.example.com
 ```
 
-### Issue: Frontend can't connect to backend
+### Progressive delivery flow
 
-```bash
-# Check if all services are running
-curl http://localhost:5000/health
-curl http://localhost:3456/ping -H "Authorization: Bearer token"
-
-# Check CORS settings in app.py
-# Make sure your frontend origin is allowed
+```mermaid
+flowchart LR
+    APPLY[apply overlay] --> STATUS[status check]
+    STATUS --> SMOKE[smoke-test]
+    SMOKE --> DECIDE{healthy?}
+    DECIDE -->|yes| PROMOTE[promote]
+    DECIDE -->|no| ABORT[abort]
 ```
 
-### Issue: ChromaDB initialization error
+---
 
-```bash
-# Remove existing database
-rm -rf chroma_db/
+## Troubleshooting Playbook
 
-# Restart the application
-python app.py
+### Decision tree
+
+```mermaid
+flowchart TD
+    S[Failure observed] --> H{Health endpoints reachable?}
+    H -->|No| P1[Check process status and ports]
+    H -->|Yes| C{Chat request failing?}
+
+    P1 --> P2[Inspect logs: backend/rag-app/frontend]
+    P2 --> P3[Fix startup dependency/env issue]
+
+    C -->|Yes| C1{RAG error indicates model/backend issue?}
+    C1 -->|Model| M1[Verify model runtime availability]
+    C1 -->|Backend| B1[Verify API_BASE_URL + backend auth/token]
+    C1 -->|Validation| V1[Check payload schema and required fields]
+    C -->|No| U{UI only issue?}
+
+    U -->|Yes| U1[Check browser console + /api responses]
+    U -->|No| O1[Re-run full smoke and inspect traces]
 ```
 
-## Next Steps
+### Common issues and fixes
 
-1. **Explore all retrieval strategies** in the web interface
-2. **Run the demo script** to see all features: `python demo.py`
-3. **Upload your own documents** using the upload feature
-4. **Check the comprehensive documentation** in `ENHANCED_FEATURES.md`
-5. **Review the code** to understand the implementation
+1. `readyz` is `not_ready`
+- Verify backend is reachable from RAG app (`API_BASE_URL`).
+- Verify documents/vector store initialization and model runtime.
+- Check `rag-app` logs for initialization exceptions.
 
-## Production Deployment
+2. Backend crashes on startup
+- Confirm `MONGO_URI` points to reachable MongoDB.
+- Use `backend/.env.example` as baseline.
+- Verify MongoDB service is up and accessible.
 
-For production deployment:
+3. Frontend cannot connect to API
+- Confirm `rag-app` is listening on `:5000`.
+- For local Vite, verify proxy routes in `frontend/vite.config.ts`.
+- Check CORS settings (`CORS_ORIGINS`) for non-default origins.
 
-1. **Use environment variables** for sensitive configuration
-2. **Enable authentication** for API endpoints
-3. **Set up Redis** for caching
-4. **Configure reverse proxy** (nginx) for better performance
-5. **Enable HTTPS** for secure communication
-6. **Monitor logs** and set up alerting
-7. **Scale with Kubernetes** if needed
+4. Upload request fails
+- Allowed extensions are enforced in `rag_system/config.py`.
+- Verify payload is multipart/form-data and contains `file`.
+- Check max size (`MAX_CONTENT_LENGTH_MB`).
 
-See `docker-compose.yml` for a production-ready setup template.
+5. Rate limit failures (`429`)
+- Tune `RATE_LIMIT_REQUESTS_PER_MINUTE` for environment.
+- Ensure client retries/backoff respect `Retry-After`.
 
-## Support & Resources
+---
 
-- **Documentation**: See `ENHANCED_FEATURES.md`
-- **Architecture**: See `ARCHITECTURE.md`
-- **Demo**: Run `python demo.py`
-- **Issues**: Report at GitHub repository
-- **Author**: David Nguyen
+## Production Promotion Readiness
 
-## Key Features Checklist
+Use this minimum gate before promoting any deployment:
 
-After setup, you should be able to:
+- `scripts/system.sh test` passes on release commit.
+- Health endpoints are all green.
+- Chat smoke passes including `/api/chat/completions`.
+- Frontend smoke checklist fully passes.
+- Deployment smoke (`deploy/scripts/smoke-test.sh`) passes against target endpoint.
+- Rollback command for current strategy is pre-validated.
 
-- ✅ Chat with AI using the web interface
-- ✅ Switch between different retrieval strategies
-- ✅ See streaming responses in real-time
-- ✅ View source citations with relevance scores
-- ✅ Upload and process documents
-- ✅ Maintain conversation context
-- ✅ Access REST and WebSocket APIs
-- ✅ View comprehensive API documentation
+```mermaid
+flowchart TD
+    A[Test Gate] --> B[Health Gate]
+    B --> C[Smoke Gate]
+    C --> D[Observability Gate]
+    D --> E[Promotion Approval]
+    E --> F[Promote]
+    F --> G[Post-promo smoke + monitor]
+```
 
-Enjoy exploring the Advanced RAG AI System! 🚀
+---
+
+## Next References
+
+- Deep design: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Platform overview: [`README.md`](README.md)
+- Deployment docs:
+  - `deploy/README.md`
+  - `deploy/k8s/README.md`
+  - `deploy/docs/PROGRESSIVE_DELIVERY.md`
+  - `deploy/docs/PRODUCTION_CHECKLIST.md`

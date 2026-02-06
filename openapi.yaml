@@ -1,338 +1,1553 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: RAG System Backend API
-  version: "1.0.0"
-  description: API Documentation for the RAG System Backend API
-  termsOfService: http://example.com/terms
+  title: RAG AI Platform API
+  version: "2.0.0"
+  description: |
+    Unified API contract for the full platform:
+    - RAG application service (chat/session/tools/upload endpoints)
+    - Backend data service (team/investments/sectors/documents/scrape endpoints)
+
+    Notes:
+    - Backend endpoints (except `/auth/token`) require `Authorization: Bearer <token>`.
+    - RAG `/api/*` endpoints require gateway bearer auth only when `ENABLE_GATEWAY_AUTH=true`.
   contact:
     name: Son Nguyen
-    url: http://example.com/sonnguyen
-    email: son.nguyen@example.com
+    url: https://sonnguyenhoang.com
+    email: hoangson091104@gmail.com
   license:
-    name: MIT
+    name: MIT License
     url: https://opensource.org/licenses/MIT
+
 servers:
+  - url: http://localhost:5000
+    description: Local RAG API
   - url: http://localhost:3456
-    description: Local server
+    description: Local backend API
+  - url: http://rag-app:5000
+    description: Internal Docker network (RAG service)
+  - url: http://backend:3456
+    description: Internal Docker network (backend service)
+
+tags:
+  - name: RAG System
+    description: Liveness/readiness/health and runtime details for the RAG service.
+  - name: RAG Chat
+    description: Chat and OpenAI-compatible chat completion APIs.
+  - name: RAG Sessions
+    description: Session lifecycle and history APIs for conversational context.
+  - name: RAG Knowledge
+    description: Upload and retrieval strategy metadata endpoints.
+  - name: Backend Auth
+    description: Backend token bootstrap endpoint.
+  - name: Backend Core
+    description: Backend profile/data endpoints used by the agentic orchestrator.
+  - name: Backend Documents
+    description: Backend document export endpoint.
+
 components:
   securitySchemes:
-    bearerAuth:
+    backendBearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-security:
-  - bearerAuth: []
-tags:
-  - name: Auth
-    description: Authentication related endpoints
-  - name: Ping
-    description: Ping endpoint to check API connectivity
-  - name: Documents
-    description: Document download endpoints
-  - name: Team
-    description: Team member endpoints
-  - name: Investments
-    description: Investment endpoints
-  - name: Sectors
-    description: Sector endpoints
-  - name: Consultations
-    description: Consultation endpoints
-  - name: Scrape
-    description: Web scraping endpoints
+      description: Required by backend endpoints except `/auth/token`.
+    ragGatewayBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Required only when `ENABLE_GATEWAY_AUTH=true` on the RAG service.
+
+  parameters:
+    XRequestID:
+      name: X-Request-ID
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Optional client-supplied request ID for traceability.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Unauthorized
+        request_id:
+          type: string
+          example: 9dd87863-c3e6-443f-b509-033f3fe4de95
+
+    AuthTokenResponse:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          example: psJN7z3J9q
+
+    PingResponse:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+
+    TeamInsight:
+      type: object
+      required:
+        - title
+        - date
+        - link
+      properties:
+        title:
+          type: string
+          example: Innovative Solutions in 2023
+        date:
+          type: string
+          example: 01/15/2023
+        link:
+          type: string
+          format: uri
+          example: https://example.com/insight
+
+    TeamMemberProfile:
+      type: object
+      required:
+        - name
+        - role
+        - bio
+        - personal_quote
+      properties:
+        name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          example: Chief Technology Officer
+        bio:
+          type: string
+        personal_quote:
+          type: string
+
+    InvestmentInsight:
+      type: object
+      required:
+        - date
+        - title
+        - url
+      properties:
+        date:
+          type: string
+          example: 01/09/2025
+        title:
+          type: string
+          example: Product launch announcement
+        url:
+          type: string
+          format: uri
+          example: https://example.com/news/launch
+
+    InvestmentProfile:
+      type: object
+      required:
+        - company_name
+        - location
+        - website
+        - sectors
+      properties:
+        company_name:
+          type: string
+          example: Larson LLC
+        location:
+          type: string
+          example: Prohaskabury, TN
+        website:
+          type: string
+          format: uri
+          example: https://amy.org
+        sectors:
+          type: array
+          items:
+            type: string
+          example:
+            - Technology
+            - Healthcare
+
+    SectorProfile:
+      type: object
+      required:
+        - sector
+        - description
+        - companies
+        - investment_team
+      properties:
+        sector:
+          type: string
+          example: Clothing
+        description:
+          type: string
+        companies:
+          type: array
+          items:
+            type: string
+        investment_team:
+          type: array
+          items:
+            type: string
+
+    ConsultationItem:
+      type: object
+      required:
+        - date
+        - company_name
+        - consultation_details
+        - hours
+      properties:
+        date:
+          type: string
+          example: 2025-01-10
+        company_name:
+          type: string
+          example: Acme Corp
+        consultation_details:
+          type: string
+        hours:
+          type: number
+          format: float
+          example: 1.5
+
+    ScrapeResponse:
+      type: object
+      required:
+        - title
+        - content
+        - date_published
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        date_published:
+          type: string
+          example: 1/1/2020
+
+    LivenessResponse:
+      type: object
+      required:
+        - status
+        - request_id
+      properties:
+        status:
+          type: string
+          example: alive
+        request_id:
+          type: string
+
+    ReadinessResponse:
+      type: object
+      required:
+        - status
+        - request_id
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+            - not_ready
+        request_id:
+          type: string
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - app_name
+        - environment
+        - rag_engine_initialized
+        - rag_engine_ready
+        - backend_api_available
+        - active_sessions
+        - response_cache_size
+        - request_id
+      properties:
+        status:
+          type: string
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+        app_name:
+          type: string
+          example: RAG AI Portfolio Support
+        environment:
+          type: string
+          example: production
+        rag_engine_initialized:
+          type: boolean
+        rag_engine_ready:
+          type: boolean
+        backend_api_available:
+          type: boolean
+        active_sessions:
+          type: integer
+        response_cache_size:
+          type: integer
+        request_id:
+          type: string
+
+    SystemInfoResponse:
+      type: object
+      required:
+        - success
+        - app_name
+        - api_version
+        - environment
+        - llm_model
+        - embedding_model
+        - rerank_model
+        - max_query_chars
+        - available_strategies
+        - backend_tools
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        app_name:
+          type: string
+        api_version:
+          type: string
+          example: v1
+        environment:
+          type: string
+        llm_model:
+          type: string
+          example: llama2
+        embedding_model:
+          type: string
+          example: sentence-transformers/all-MiniLM-L6-v2
+        rerank_model:
+          type: string
+          example: cross-encoder/ms-marco-MiniLM-L-6-v2
+        max_query_chars:
+          type: integer
+          example: 4000
+        available_strategies:
+          type: array
+          items:
+            type: string
+            enum:
+              - semantic
+              - hybrid
+              - multi_query
+              - decomposed
+        backend_tools:
+          type: array
+          items:
+            type: string
+          example:
+            - team_profile
+            - investment_profile
+            - sector_profile
+        request_id:
+          type: string
+
+    ToolsResponse:
+      type: object
+      required:
+        - success
+        - tools
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        tools:
+          type: array
+          items:
+            type: string
+          example:
+            - team_profile
+            - team_insights
+            - investment_profile
+            - investment_insights
+            - sector_profile
+            - consultations
+            - scrape_page
+        request_id:
+          type: string
+
+    SourceItem:
+      type: object
+      required:
+        - source
+        - score
+        - preview
+      properties:
+        source:
+          type: string
+          example: peakspan_master_class_building_a_world_class_channel_strategy.txt
+        score:
+          type: number
+          format: float
+          example: 0.84
+        preview:
+          type: string
+
+    AgenticTraceItem:
+      type: object
+      required:
+        - tool
+        - params
+        - reason
+        - status
+      properties:
+        tool:
+          type: string
+          example: team_profile
+        params:
+          type: object
+          additionalProperties: true
+          example:
+            name: John Doe
+        reason:
+          type: string
+          example: person entity detected
+        status:
+          type: string
+          enum:
+            - ok
+            - empty
+            - error
+        error:
+          type: string
+          nullable: true
+
+    ChatResult:
+      type: object
+      required:
+        - query
+        - response
+        - strategy
+        - num_documents
+        - sources
+        - api_data_keys
+        - api_chain_trace
+        - metadata
+      properties:
+        query:
+          type: string
+        response:
+          type: string
+        strategy:
+          type: string
+          enum:
+            - semantic
+            - hybrid
+            - multi_query
+            - decomposed
+        num_documents:
+          type: integer
+          example: 5
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceItem"
+        api_data_keys:
+          type: array
+          items:
+            type: string
+        api_chain_trace:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgenticTraceItem"
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            cache_hit: false
+            latency_ms: 1023.5
+            timestamp: 2026-02-06T23:35:00Z
+            api_chain_calls: 3
+
+    ChatRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+          example: Summarize current portfolio opportunities and risks.
+        strategy:
+          type: string
+          enum:
+            - semantic
+            - hybrid
+            - multi_query
+            - decomposed
+          default: hybrid
+        session_id:
+          type: string
+          nullable: true
+
+    ChatResponse:
+      type: object
+      required:
+        - success
+        - session_id
+        - result
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        session_id:
+          type: string
+          nullable: true
+        result:
+          $ref: "#/components/schemas/ChatResult"
+        request_id:
+          type: string
+
+    OpenAIChatMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          example: user
+        content:
+          type: string
+
+    OpenAIChatCompletionRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        model:
+          type: string
+          nullable: true
+          example: llama2
+        strategy:
+          type: string
+          enum:
+            - semantic
+            - hybrid
+            - multi_query
+            - decomposed
+          default: hybrid
+        session_id:
+          type: string
+          nullable: true
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OpenAIChatMessage"
+
+    OpenAIChatCompletionChoice:
+      type: object
+      required:
+        - index
+        - message
+        - finish_reason
+      properties:
+        index:
+          type: integer
+          example: 0
+        message:
+          $ref: "#/components/schemas/OpenAIChatMessage"
+        finish_reason:
+          type: string
+          example: stop
+
+    OpenAIUsage:
+      type: object
+      required:
+        - prompt_tokens
+        - completion_tokens
+        - total_tokens
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+
+    OpenAIChatCompletionResponse:
+      type: object
+      required:
+        - id
+        - object
+        - created
+        - model
+        - choices
+        - usage
+        - metadata
+        - request_id
+      properties:
+        id:
+          type: string
+          example: chatcmpl-1234567890abcdef12345678
+        object:
+          type: string
+          example: chat.completion
+        created:
+          type: integer
+          example: 1738890000
+        model:
+          type: string
+          example: llama2
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/OpenAIChatCompletionChoice"
+        usage:
+          $ref: "#/components/schemas/OpenAIUsage"
+        metadata:
+          type: object
+          additionalProperties: true
+        request_id:
+          type: string
+
+    SessionMessage:
+      type: object
+      required:
+        - timestamp
+        - query
+        - response
+        - strategy
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        query:
+          type: string
+        response:
+          type: string
+        strategy:
+          type: string
+          enum:
+            - semantic
+            - hybrid
+            - multi_query
+            - decomposed
+
+    SessionData:
+      type: object
+      required:
+        - created_at
+        - messages
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionMessage"
+
+    SessionCreatedResponse:
+      type: object
+      required:
+        - success
+        - session_id
+        - created_at
+        - messages
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        session_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionMessage"
+        request_id:
+          type: string
+
+    SessionEnvelopeResponse:
+      type: object
+      required:
+        - success
+        - session_id
+        - session
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        session_id:
+          type: string
+        session:
+          $ref: "#/components/schemas/SessionData"
+        request_id:
+          type: string
+
+    SessionListItem:
+      type: object
+      required:
+        - session_id
+        - created_at
+        - message_count
+      properties:
+        session_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        message_count:
+          type: integer
+          example: 4
+
+    SessionListResponse:
+      type: object
+      required:
+        - success
+        - sessions
+        - total
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionListItem"
+        total:
+          type: integer
+          example: 1
+        request_id:
+          type: string
+
+    DeleteSessionResponse:
+      type: object
+      required:
+        - success
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        request_id:
+          type: string
+
+    UploadResponse:
+      type: object
+      required:
+        - success
+        - filename
+        - stored_as
+        - added_chunks
+        - message
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        filename:
+          type: string
+          example: market-brief.md
+        stored_as:
+          type: string
+          example: a1b2c3d4_market-brief.md
+        added_chunks:
+          type: integer
+          example: 12
+        message:
+          type: string
+          example: File uploaded and indexed successfully.
+        request_id:
+          type: string
+
+    StrategyItem:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+          enum:
+            - semantic
+            - hybrid
+            - multi_query
+            - decomposed
+        name:
+          type: string
+          example: Hybrid
+        description:
+          type: string
+
+    StrategiesResponse:
+      type: object
+      required:
+        - success
+        - strategies
+        - request_id
+      properties:
+        success:
+          type: boolean
+          example: true
+        strategies:
+          type: array
+          items:
+            $ref: "#/components/schemas/StrategyItem"
+        request_id:
+          type: string
+
 paths:
+  /livez:
+    get:
+      tags:
+        - RAG System
+      summary: RAG liveness probe
+      operationId: ragLiveness
+      responses:
+        "200":
+          description: Service process is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessResponse"
+
+  /readyz:
+    get:
+      tags:
+        - RAG System
+      summary: RAG readiness probe
+      operationId: ragReadiness
+      responses:
+        "200":
+          description: Service is ready to serve requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          description: Service process is up but not yet ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+
+  /health:
+    get:
+      tags:
+        - RAG System
+      summary: RAG health snapshot
+      operationId: ragHealth
+      responses:
+        "200":
+          description: Health payload including backend/API connectivity state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /openapi.json:
+    get:
+      tags:
+        - RAG System
+      summary: RAG service runtime OpenAPI JSON endpoint
+      operationId: ragOpenApiJson
+      responses:
+        "200":
+          description: OpenAPI JSON object generated by the RAG service
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/system/info:
+    get:
+      tags:
+        - RAG System
+      summary: RAG runtime configuration and capability snapshot
+      operationId: ragSystemInfo
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: System info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemInfoResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/tools:
+    get:
+      tags:
+        - RAG System
+      summary: Available backend tools for agentic API chaining
+      operationId: ragTools
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: Tool registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolsResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/chat:
+    post:
+      tags:
+        - RAG Chat
+      summary: Query the RAG assistant
+      operationId: ragChat
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Chat response with source evidence and agentic trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/chat/completions:
+    post:
+      tags:
+        - RAG Chat
+      summary: OpenAI-compatible chat completion endpoint
+      operationId: ragChatCompletions
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenAIChatCompletionRequest"
+      responses:
+        "200":
+          description: OpenAI-compatible completion payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenAIChatCompletionResponse"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/session:
+    post:
+      tags:
+        - RAG Sessions
+      summary: Create a new chat session
+      operationId: ragCreateSession
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreatedResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/session/{session_id}:
+    get:
+      tags:
+        - RAG Sessions
+      summary: Fetch session content by ID
+      operationId: ragGetSession
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelopeResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - RAG Sessions
+      summary: Delete a session
+      operationId: ragDeleteSession
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session deleted (idempotent behavior)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteSessionResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/sessions:
+    get:
+      tags:
+        - RAG Sessions
+      summary: List known sessions
+      operationId: ragListSessions
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionListResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/upload:
+    post:
+      tags:
+        - RAG Knowledge
+      summary: Upload and index a knowledge document
+      operationId: ragUploadDocument
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: File uploaded and indexed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "400":
+          description: Invalid file, unsupported extension, or missing payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/strategies:
+    get:
+      tags:
+        - RAG Knowledge
+      summary: List retrieval strategies supported by the RAG engine
+      operationId: ragStrategies
+      security:
+        - ragGatewayBearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
+      responses:
+        "200":
+          description: Available retrieval strategies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StrategiesResponse"
+        "401":
+          description: Unauthorized (when gateway auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/token:
     get:
       tags:
-        - Auth
-      summary: Returns a dummy bearer token.
+        - Backend Auth
+      summary: Get backend bearer token (development/demo)
+      operationId: backendGetToken
       responses:
-        '200':
-          description: A dummy bearer token.
+        "200":
+          description: Token payload
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: psJN7z3J9q
+                $ref: "#/components/schemas/AuthTokenResponse"
+
   /ping:
     get:
       tags:
-        - Ping
-      summary: Returns the authenticated user details.
+        - Backend Core
+      summary: Verify backend connectivity and authenticated identity
+      operationId: backendPing
+      security:
+        - backendBearerAuth: []
       responses:
-        '200':
-          description: The authenticated user's details.
+        "200":
+          description: Authenticated user payload
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: John Doe
-                  email:
-                    type: string
-                    example: john.doe@example.com
-        '401':
-          description: Unauthorized.
+                $ref: "#/components/schemas/PingResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/documents/download:
     get:
       tags:
-        - Documents
-      summary: Zips and downloads all documents from the documents folder.
+        - Backend Documents
+      summary: Download backend documents as a ZIP archive
+      operationId: backendDownloadDocuments
+      security:
+        - backendBearerAuth: []
       responses:
-        '200':
-          description: A zip file containing the documents.
+        "200":
+          description: ZIP archive of backend documents
           content:
             application/zip:
               schema:
                 type: string
                 format: binary
-        '500':
-          description: Documents directory not found or an error occurred while creating the zip.
+        "500":
+          description: Documents directory unavailable or archive generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/team:
     get:
       tags:
-        - Team
-      summary: Returns team member details (excludes related_insights).
-      description: Retrieves details for a specific team member, excluding related insights.
+        - Backend Core
+      summary: Get team member profile by name
+      operationId: backendTeamProfile
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: name
+        - name: name
+          in: query
           required: true
-          description: The full name of the team member.
           schema:
             type: string
       responses:
-        '200':
-          description: Team member details.
+        "200":
+          description: Team member profile
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: John Doe
-                  role:
-                    type: string
-                    example: Chief Technology Officer
-                  bio:
-                    type: string
-                    example: John has over 15 years of experience...
-                  personal_quote:
-                    type: string
-                    example: Innovation distinguishes between a leader and a follower.
-        '400':
-          description: Query parameter "name" is missing.
-        '404':
-          description: Team member not found.
-        '500':
-          description: Internal server error.
+                $ref: "#/components/schemas/TeamMemberProfile"
+        "400":
+          description: Missing `name` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Team member not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/team/insights:
     get:
       tags:
-        - Team
-      summary: Returns only the related insights for a team member.
-      description: Retrieves the insights associated with a team member.
+        - Backend Core
+      summary: Get team member related insights by name
+      operationId: backendTeamInsights
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: name
+        - name: name
+          in: query
           required: true
-          description: The full name of the team member.
           schema:
             type: string
       responses:
-        '200':
-          description: A list of related insights.
+        "200":
+          description: Team insights
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    title:
-                      type: string
-                      example: Innovative Solutions in 2023
-                    date:
-                      type: string
-                      example: "01/15/2023"
-                    link:
-                      type: string
-                      example: https://example.com/insight
-        '400':
-          description: Query parameter "name" is missing.
-        '404':
-          description: Team member not found.
-        '500':
-          description: Internal server error.
+                  $ref: "#/components/schemas/TeamInsight"
+        "400":
+          description: Missing `name` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Team member not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/investments:
     get:
       tags:
-        - Investments
-      summary: Returns investment details for a company (excludes insights).
+        - Backend Core
+      summary: Get investment profile by company name
+      operationId: backendInvestmentProfile
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: company_name
+        - name: company_name
+          in: query
           required: true
-          description: The company name to retrieve.
           schema:
             type: string
       responses:
-        '200':
-          description: Investment details.
+        "200":
+          description: Investment profile
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  company_name:
-                    type: string
-                    example: Larson LLC
-                  location:
-                    type: string
-                    example: Prohaskabury, TN
-                  website:
-                    type: string
-                    example: https://amy.org
-                  sectors:
-                    type: array
-                    items:
-                      type: string
-                      example: Technology
-        '400':
-          description: Query parameter "company_name" is missing.
-        '404':
-          description: Company not found.
-        '500':
-          description: Server error.
+                $ref: "#/components/schemas/InvestmentProfile"
+        "400":
+          description: Missing `company_name` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/investments/insights:
     get:
       tags:
-        - Investments
-      summary: Returns only the insights for a company.
+        - Backend Core
+      summary: Get investment insights by company name
+      operationId: backendInvestmentInsights
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: company_name
+        - name: company_name
+          in: query
           required: true
-          description: The company name to retrieve insights for.
           schema:
             type: string
       responses:
-        '200':
-          description: A list of insights.
+        "200":
+          description: Investment insights
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-        '400':
-          description: Query parameter "company_name" is missing.
-        '404':
-          description: Company not found.
-        '500':
-          description: Server error.
+                  $ref: "#/components/schemas/InvestmentInsight"
+        "400":
+          description: Missing `company_name` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/sectors:
     get:
       tags:
-        - Sectors
-      summary: Returns details for a specific sector.
+        - Backend Core
+      summary: Get sector profile by sector name
+      operationId: backendSectorProfile
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: sector
+        - name: sector
+          in: query
           required: true
-          description: The name of the sector.
           schema:
             type: string
       responses:
-        '200':
-          description: Sector details.
+        "200":
+          description: Sector profile
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  sector:
-                    type: string
-                    example: Clothing
-                  description:
-                    type: string
-                    example: Description of the clothing sector.
-                  companies:
-                    type: array
-                    items:
-                      type: string
-                      example: Brand A
-                  investment_team:
-                    type: array
-                    items:
-                      type: string
-                      example: Team Member A
-        '400':
-          description: Query parameter "sector" is missing.
-        '404':
-          description: Sector not found.
-        '500':
-          description: Server error.
+                $ref: "#/components/schemas/SectorProfile"
+        "400":
+          description: Missing `sector` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Sector not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/consultations:
     get:
       tags:
-        - Consultations
-      summary: Returns consultation details for a specific consultant.
+        - Backend Core
+      summary: Get consultations mentioning a consultant name
+      operationId: backendConsultations
+      security:
+        - backendBearerAuth: []
       parameters:
-        - in: query
-          name: name
+        - name: name
+          in: query
           required: true
-          description: The consultant's name to search for within consultation details.
           schema:
             type: string
       responses:
-        '200':
-          description: A list of consultation details.
+        "200":
+          description: Matching consultation entries
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-        '400':
-          description: Query parameter "name" is missing.
-        '404':
-          description: No consultations found for the consultant.
-        '500':
-          description: Server error.
-  /api/scrape:
-    get:
-      tags:
-        - Scrape
-      summary: Simulates scraping an insights page and returns fake scraped data.
-      parameters:
-        - in: query
-          name: url
-          required: true
-          description: The URL of the insights page to scrape.
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Fake scraped data.
+                  $ref: "#/components/schemas/ConsultationItem"
+        "400":
+          description: Missing `name` query parameter
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                    example: Fake Title
-                  content:
-                    type: string
-                    example: Fake scraped content that simulates real data...
-                  date_published:
-                    type: string
-                    example: "1/1/2020"
-        '400':
-          description: Query parameter "url" is missing.
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No consultations found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scrape:
+    get:
+      tags:
+        - Backend Core
+      summary: Simulate webpage scrape output for a given URL
+      operationId: backendScrape
+      security:
+        - backendBearerAuth: []
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        "200":
+          description: Scraped page summary payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScrapeResponse"
+        "400":
+          description: Missing `url` query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

@@ -41,6 +41,12 @@ variable "kubernetes_version" {
   default     = "v1.29.1"
 }
 
+variable "cluster_endpoint_public_access" {
+  type        = bool
+  description = "Expose OKE API endpoint publicly"
+  default     = true
+}
+
 variable "vcn_cidr" {
   type        = string
   description = "VCN CIDR"
@@ -80,7 +86,19 @@ variable "node_memory_in_gbs" {
 variable "node_count" {
   type        = number
   description = "Number of worker nodes"
-  default     = 2
+  default     = 3
+}
+
+variable "enable_canary_node_pool" {
+  type        = bool
+  description = "Create a dedicated node pool for canary/preview workloads"
+  default     = true
+}
+
+variable "canary_node_count" {
+  type        = number
+  description = "Node count for canary node pool"
+  default     = 1
 }
 
 variable "node_image_ocid" {
@@ -96,5 +114,14 @@ variable "ssh_public_key_path" {
 variable "admin_cidr" {
   type        = string
   description = "CIDR allowed to access the Kubernetes API and SSH"
-  default     = "0.0.0.0/0"
+  default     = "203.0.113.0/24"
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Freeform tags for OCI resources"
+  default = {
+    Environment = "production"
+    ManagedBy   = "terraform"
+  }
 }

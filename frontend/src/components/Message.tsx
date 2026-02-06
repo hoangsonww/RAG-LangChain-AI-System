@@ -1,136 +1,202 @@
-import React from 'react';
-import { Box, Paper, Typography, Chip, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import {
-  Person as UserIcon,
-  AutoAwesome as AIIcon,
-  Info as InfoIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import SourceCard from './SourceCard';
+import { Box, Chip, Divider, Paper, Typography } from "@mui/material";
+import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
+import HubRoundedIcon from "@mui/icons-material/HubRounded";
+import ReactMarkdown from "react-markdown";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
+import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
+import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
+import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
+import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
+import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
+import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-interface ChatMessage {
-  id: string;
-  type: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-  sources?: any[];
-  strategy?: string;
-}
+import type { ChatMessage } from "../types/chat";
+import SourceCard from "./SourceCard";
+
+SyntaxHighlighter.registerLanguage("tsx", tsx);
+SyntaxHighlighter.registerLanguage("typescript", typescript);
+SyntaxHighlighter.registerLanguage("javascript", javascript);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("json", json);
+SyntaxHighlighter.registerLanguage("bash", bash);
 
 interface MessageProps {
   message: ChatMessage;
+  compact?: boolean;
 }
 
-const Message: React.FC<MessageProps> = ({ message }) => {
-  const isUser = message.type === 'user';
-  const isSystem = message.type === 'system';
+const Message = ({ message, compact = false }: MessageProps) => {
+  const isUser = message.role === "user";
+  const isSystem = message.role === "system";
+
+  const title = isUser ? "You" : isSystem ? "System" : "RAG Assistant";
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        justifyContent: isUser ? 'flex-end' : 'flex-start',
-        mb: 2,
+        display: "flex",
+        justifyContent: isUser ? "flex-end" : "flex-start",
       }}
     >
       <Paper
-        elevation={isUser ? 3 : 1}
+        elevation={0}
         sx={{
-          p: 2,
-          maxWidth: '80%',
-          bgcolor: isUser
-            ? 'primary.main'
+          width: "100%",
+          maxWidth: isUser ? 720 : 920,
+          p: compact ? 1.5 : 2,
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: isUser ? "rgba(11, 95, 255, 0.28)" : "var(--outline)",
+          background: isUser
+            ? "linear-gradient(145deg, rgba(11,95,255,0.12), rgba(11,95,255,0.04))"
             : isSystem
-            ? 'warning.dark'
-            : 'background.paper',
-          color: isUser || isSystem ? 'white' : 'text.primary',
+              ? "linear-gradient(145deg, rgba(243, 152, 73, 0.20), rgba(243,152,73,0.08))"
+              : "rgba(255,255,255,0.78)",
+          backdropFilter: "blur(4px)",
         }}
       >
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 1,
+            flexWrap: "wrap",
+          }}
+        >
           {isUser ? (
-            <UserIcon sx={{ mr: 1, fontSize: 20 }} />
+            <PersonRoundedIcon sx={{ color: "var(--brand-blue)" }} />
           ) : isSystem ? (
-            <InfoIcon sx={{ mr: 1, fontSize: 20 }} />
+            <InfoOutlinedIcon sx={{ color: "var(--brand-orange)" }} />
           ) : (
-            <AIIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+            <SmartToyRoundedIcon sx={{ color: "var(--brand-blue)" }} />
           )}
-          <Typography variant="subtitle2" fontWeight="bold">
-            {isUser ? 'You' : isSystem ? 'System' : 'AI Assistant'}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            {title}
           </Typography>
           {message.strategy && (
             <Chip
               label={message.strategy}
               size="small"
-              sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
             />
           )}
+          {message.metadata?.cache_hit && (
+            <Chip
+              size="small"
+              icon={
+                <AutorenewRoundedIcon sx={{ fontSize: "0.8rem !important" }} />
+              }
+              label="Cache hit"
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
+            />
+          )}
+          {message.metadata?.api_chain_calls ? (
+            <Chip
+              size="small"
+              icon={<HubRoundedIcon sx={{ fontSize: "0.8rem !important" }} />}
+              label={`${message.metadata.api_chain_calls} tool calls`}
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
+            />
+          ) : null}
+          {message.metadata?.latency_ms ? (
+            <Chip
+              size="small"
+              icon={<BoltRoundedIcon sx={{ fontSize: "0.8rem !important" }} />}
+              label={`${message.metadata.latency_ms} ms`}
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
+            />
+          ) : null}
           <Typography
             variant="caption"
-            sx={{ ml: 'auto', opacity: 0.7 }}
+            sx={{ ml: "auto", color: "text.secondary" }}
           >
-            {message.timestamp.toLocaleTimeString()}
+            {new Date(message.timestamp).toLocaleTimeString()}
           </Typography>
         </Box>
 
-        {/* Content */}
-        <Box>
-          {isUser || isSystem ? (
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-              {message.content}
-            </Typography>
-          ) : (
+        {isUser || isSystem ? (
+          <Typography
+            variant="body1"
+            sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}
+          >
+            {message.content}
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              "& p": { lineHeight: 1.7, mb: 1.2 },
+              "& ul, & ol": { pl: 2.5 },
+              "& pre": {
+                my: 1.5,
+                borderRadius: 2,
+                border: "1px solid var(--outline)",
+              },
+            }}
+          >
             <ReactMarkdown
               components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
+                a: ({ ...props }) => (
+                  <a {...props} target="_blank" rel="noreferrer" />
+                ),
+                code: ({ className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || "");
+                  const codeText = String(children).replace(/\n$/, "");
+                  if (!match) {
+                    return (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+
+                  return (
                     <SyntaxHighlighter
-                      style={vscDarkPlus}
                       language={match[1]}
+                      style={oneLight}
                       PreTag="div"
-                      {...props}
+                      customStyle={{
+                        margin: 0,
+                        padding: "0.85rem",
+                        borderRadius: 10,
+                        fontSize: "0.86rem",
+                      }}
                     >
-                      {String(children).replace(/\n$/, '')}
+                      {codeText}
                     </SyntaxHighlighter>
-                  ) : (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
                   );
                 },
               }}
             >
               {message.content}
             </ReactMarkdown>
-          )}
-        </Box>
+          </Box>
+        )}
 
-        {/* Sources */}
         {message.sources && message.sources.length > 0 && (
-          <Accordion
-            sx={{
-              mt: 2,
-              bgcolor: 'rgba(0,0,0,0.2)',
-              color: 'inherit',
-            }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="subtitle2">
-                Sources ({message.sources.length})
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {message.sources.map((source, index) => (
-                  <SourceCard key={index} source={source} index={index} />
+          <>
+            <Divider sx={{ my: 1.5 }} />
+            <Box sx={{ display: "grid", gap: 1 }}>
+              {message.sources
+                .slice(0, compact ? 2 : message.sources.length)
+                .map((source, index) => (
+                  <SourceCard
+                    key={`${source.source}-${index}`}
+                    source={source}
+                    index={index}
+                  />
                 ))}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+          </>
         )}
       </Paper>
     </Box>

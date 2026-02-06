@@ -2,7 +2,13 @@
 /backend/.env
 /.venv/
 /frontend/node_modules/
+/frontend/dist/
 .terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
+logs/
+uploads/
+chroma_db/
+__pycache__/
+.pytest_cache/

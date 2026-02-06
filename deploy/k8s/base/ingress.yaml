@@ -2,12 +2,16 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: rag-ingress
-  namespace: rag-system
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: "32m"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - rag.example.com
+      secretName: rag-tls
   rules:
     - host: rag.example.com
       http:

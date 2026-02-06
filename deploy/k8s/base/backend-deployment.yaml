@@ -2,23 +2,32 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: rag-system
 spec:
-  replicas: 2
+  replicas: 3
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
       app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
   template:
     metadata:
       labels:
         app: backend
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/component: api
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: backend
           image: ghcr.io/your-org/rag-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3456
+              name: http
           env:
             - name: MONGO_URI
               valueFrom:
@@ -30,20 +39,30 @@ spec:
                 configMapKeyRef:
                   name: rag-config
                   key: BACKEND_PORT
+          startupProbe:
+            httpGet:
+              path: /auth/token
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
           readinessProbe:
-            tcpSocket:
-              port: 3456
-            initialDelaySeconds: 5
+            httpGet:
+              path: /auth/token
+              port: http
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
           livenessProbe:
-            tcpSocket:
-              port: 3456
-            initialDelaySeconds: 10
+            httpGet:
+              path: /auth/token
+              port: http
             periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             requests:
-              cpu: "100m"
+              cpu: "200m"
               memory: "256Mi"
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "1000m"
+              memory: "1Gi"

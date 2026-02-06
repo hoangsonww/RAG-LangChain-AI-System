@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MongoDB for the Express backend
   mongodb:
@@ -30,6 +28,12 @@ services:
       PORT: 3456
     depends_on:
       - mongodb
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3456/auth/token', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - rag-network
 
@@ -51,7 +55,14 @@ services:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - rag-network
 
@@ -65,7 +76,14 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - rag-app
+      rag-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - rag-network
 

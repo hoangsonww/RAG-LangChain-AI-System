@@ -16,8 +16,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY advanced_rag_engine.py .
-COPY app.py .
+COPY rag_system ./rag_system
+COPY run.py .
 
 # Create necessary directories
 RUN mkdir -p logs chroma_db uploads
@@ -28,5 +28,5 @@ EXPOSE 5000
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Run the application
-CMD ["python", "app.py"]
+# Run the application (production WSGI + websocket support)
+CMD ["gunicorn", "-k", "eventlet", "-w", "1", "-b", "0.0.0.0:5000", "rag_system.server:app"]

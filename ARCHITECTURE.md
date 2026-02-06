@@ -1,1517 +1,879 @@
-# RAG AI System - Enhanced Architecture Documentation
+# RAG AI Portfolio Support Platform: Architecture Reference
 
-## 📋 Table of Contents
-
-- [System Overview](#system-overview)
-- [Enhanced Architecture (2025 Update)](#enhanced-architecture-2025-update)
-- [High-Level Architecture](#high-level-architecture)
-- [Component Architecture](#component-architecture)
-  - [Frontend Layer](#frontend-layer)
-  - [API Gateway Layer](#api-gateway-layer)
-  - [RAG Processing Pipeline](#rag-processing-pipeline)
-  - [Vector Store Layer](#vector-store-layer)
-  - [Backend API Layer](#backend-api-layer)
-  - [Data Layer](#data-layer)
-- [Advanced RAG Techniques](#advanced-rag-techniques)
-- [Data Flow Architecture](#data-flow-architecture)
-- [Real-Time Communication Architecture](#real-time-communication-architecture)
-- [Deployment Architecture](#deployment-architecture)
-- [Technology Stack](#technology-stack)
-- [Design Patterns and Principles](#design-patterns-and-principles)
-- [Security Architecture](#security-architecture)
-- [Scalability Considerations](#scalability-considerations)
+This document is the technical source of truth for system design, runtime behavior, and production operating model for the RAG AI Portfolio Support platform.
 
 ---
 
-## System Overview
+## Table Of Contents
 
-This project implements a comprehensive, **production-ready Retrieval-Augmented Generation (RAG)** system for portfolio support. The system has been significantly enhanced with modern full-stack architecture, advanced retrieval strategies, and real-time capabilities.
-
-### Key Capabilities
-
-**Original Features:**
-- **Document Processing**: Downloads, extracts, and indexes MasterClass documents
-- **Vector Similarity Search**: Efficient document retrieval
-- **Dynamic Entity Extraction**: Regex-based extraction of entities
-- **API Enrichment**: Integrates external data sources
-- **Conversational Memory**: Maintains context across conversations
-- **Multiple Interfaces**: CLI, Jupyter Notebook, and REST API
-- **4 Retrieval Strategies**: Semantic, Hybrid, Multi-Query, Query Decomposition
-- **Re-Ranking**: Cross-encoder re-ranking for improved relevance
-- **Modern Web Interface**: React + TypeScript with Material-UI
-- **Real-Time Streaming**: WebSocket-based response streaming
-- **Session Management**: Persistent conversation history
-- **ChromaDB Integration**: Persistent vector storage
-- **Hybrid Search**: Combines semantic + keyword (BM25) search
-- **Docker Deployment**: Complete containerized setup
-- **Production Ready**: Health checks, logging, monitoring
-
----
-
-## Enhanced Architecture (2025 Update)
-
-### Full-Stack Architecture Overview
-
-```mermaid
-graph TB
-    subgraph "Client Tier"
-        direction LR
-        WEB[React Web App<br/>Port 3000]
-        CLI[CLI Interface]
-        NB[Jupyter Notebook]
-    end
-
-    subgraph "API Gateway Tier"
-        direction TB
-        FLASK[Flask + SocketIO<br/>Port 5000]
-        WS[WebSocket Handler]
-        REST[REST API]
-        UPLOAD[File Upload]
-    end
-
-    subgraph "Processing Tier"
-        direction TB
-        RAG[Advanced RAG Engine]
-        STRAT[4 Retrieval Strategies]
-        RERANK[Re-Ranker]
-        MEM[Memory Manager]
-        ENT[Entity Extractor]
-    end
-
-    subgraph "Storage Tier"
-        direction TB
-        CHROMA[(ChromaDB<br/>Vectors)]
-        BM25[BM25 Index]
-        SESS[(Session Store)]
-    end
-
-    subgraph "LLM Tier"
-        direction TB
-        OLLAMA[Ollama<br/>llama2]
-        EMB[Embeddings<br/>MiniLM]
-    end
-
-    subgraph "Backend Tier"
-        direction TB
-        EXPRESS[Express API<br/>Port 3456]
-        MONGO[(MongoDB)]
-    end
-
-    WEB --> FLASK
-    CLI --> RAG
-    NB --> RAG
-
-    FLASK --> WS
-    FLASK --> REST
-    FLASK --> UPLOAD
-
-    WS --> RAG
-    REST --> RAG
-    UPLOAD --> RAG
-
-    RAG --> STRAT
-    RAG --> RERANK
-    RAG --> MEM
-    RAG --> ENT
-
-    STRAT --> CHROMA
-    STRAT --> BM25
-    STRAT --> EMB
-    MEM --> SESS
-    ENT --> EXPRESS
-
-    RAG --> OLLAMA
-    EXPRESS --> MONGO
-
-    style WEB fill:#2196f3,color:#fff
-    style FLASK fill:#4caf50,color:#fff
-    style RAG fill:#ff9800,color:#fff
-    style CHROMA fill:#9c27b0,color:#fff
-    style OLLAMA fill:#f44336,color:#fff
-    style EXPRESS fill:#00bcd4,color:#fff
-```
-
-### Technology Stack by Layer
-
-```mermaid
-graph LR
-    subgraph Frontend
-        R[React 18]
-        TS[TypeScript 5.7]
-        MUI[Material-UI 6]
-        SIO[Socket.IO Client]
-    end
-
-    subgraph Backend
-        F[Flask 3.1]
-        FSI[Flask-SocketIO]
-        LC[LangChain 0.3]
-        CB[ChromaDB]
-    end
-
-    subgraph AI_ML
-        O[Ollama]
-        ST[Sentence Transformers]
-        CE[Cross-Encoders]
-        BM[BM25]
-    end
-
-    subgraph Services
-        EX[Express.js]
-        MG[MongoDB]
-        SW[Swagger]
-    end
-
-    subgraph DevOps
-        D[Docker]
-        DC[Docker Compose]
-        NX[Nginx]
-    end
-
-    Frontend --> Backend
-    Backend --> AI_ML
-    Backend --> Services
-    DevOps -.->|Contains| Frontend
-    DevOps -.->|Contains| Backend
-    DevOps -.->|Contains| Services
-```
+1. [Design Goals](#design-goals)
+2. [Technology Stack](#technology-stack)
+3. [System Context](#system-context)
+4. [Container Architecture](#container-architecture)
+5. [RAG Service Internal Architecture](#rag-service-internal-architecture)
+6. [Backend Service Architecture](#backend-service-architecture)
+7. [Frontend Architecture](#frontend-architecture)
+8. [Data Model](#data-model)
+9. [Primary Execution Flows](#primary-execution-flows)
+10. [Security Model](#security-model)
+11. [Deployment Topologies](#deployment-topologies)
+12. [Scalability And Reliability](#scalability-and-reliability)
+13. [Observability And Operations](#observability-and-operations)
+14. [Failure Modes And Recovery](#failure-modes-and-recovery)
+15. [Request Context Propagation Model](#request-context-propagation-model)
+16. [State Placement Strategy](#state-placement-strategy)
+17. [CI/CD And Release Control Plane](#cicd-and-release-control-plane)
+18. [Known Constraints](#known-constraints)
+19. [Extension Points](#extension-points)
+20. [Related Documents](#related-documents)
 
 ---
 
-## High-Level Architecture
+## Design Goals
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        A[User Interface]
-        B[CLI Interface]
-        C[Jupyter Notebook]
-        D[HTTP Client]
-    end
+### Functional goals
 
-    subgraph "Application Layer"
-        E[Flask API Server]
-        F[RAG Processing Engine]
-        G[Conversation Manager]
-    end
+- Deliver source-backed responses from portfolio content.
+- Enrich responses with structured backend API data via tool chaining.
+- Support multiple retrieval strategies for varied query patterns.
+- Provide a modern chat UX with streaming and traceability.
 
-    subgraph "AI/ML Layer"
-        H[Ollama LLM<br/>llama2]
-        I[HuggingFace Embeddings<br/>all-MiniLM-L6-v2]
-        J[FAISS Vector Store]
-    end
+### Non-functional goals
 
-    subgraph "Backend Services"
-        K[Express API Server]
-        L[Authentication Middleware]
-        M[Swagger Documentation]
-    end
-
-    subgraph "Data Sources"
-        N[(MongoDB)]
-        O[Document Repository<br/>ZIP Files]
-        P[External Web Sources]
-    end
-
-    A --> E
-    B --> F
-    C --> F
-    D --> E
-
-    E --> F
-    F --> G
-    F --> H
-    F --> I
-    F --> J
-    F --> K
-
-    K --> L
-    K --> M
-    K --> N
-
-    F --> O
-    F --> P
-```
-
-### Architecture Layers
-
-1. **Client Layer**: Multiple interfaces for user interaction (CLI, notebook, API clients)
-2. **Application Layer**: Core RAG processing logic and Flask API server
-3. **AI/ML Layer**: Language models, embeddings, and vector storage
-4. **Backend Services**: Express API for data enrichment and authentication
-5. **Data Sources**: MongoDB, document repositories, and external web sources
-
----
-
-## Component Architecture
-
-### Frontend/Client Layer
-
-```mermaid
-graph LR
-    subgraph "Interaction Modes"
-        A[CLI Interface<br/>Python Script]
-        B[Jupyter Notebook<br/>Google Colab]
-        C[REST API Client<br/>HTTP/JSON]
-    end
-
-    subgraph "Features"
-        D[Interactive Console]
-        E[Conversation History]
-        F[Error Handling]
-    end
-
-    A --> D
-    A --> E
-    B --> D
-    B --> E
-    C --> F
-
-    D --> G[RAG Engine]
-    E --> G
-    F --> G
-```
-
-#### Components
-
-- **CLI Interface** (`rag_langchain_ai_system.py`): Terminal-based interactive conversation loop
-- **Jupyter Notebook** (`RAG_LangChain_AI_System.ipynb`): Notebook environment for experimentation
-- **Flask API** (`flask_api.py`): RESTful endpoint for programmatic access
-
----
-
-### RAG Processing Pipeline
-
-```mermaid
-graph TB
-    A[User Query] --> B{Query Type Detection}
-
-    B -->|Greeting| C[Return Preset Response]
-    B -->|Complex Query| D[Document Retrieval]
-
-    D --> E[FAISS Vector Search<br/>Top-K Similarity]
-
-    E --> F[Entity Extraction]
-    F --> G{Extract Entities}
-
-    G -->|Person Name| H[Call Team API]
-    G -->|Company Name| I[Call Investments API]
-    G -->|Sector| J[Call Sectors API]
-    G -->|URL| K[Call Scrape API]
-    G -->|Consultation| L[Call Consultations API]
-
-    H --> M[Aggregate API Data]
-    I --> M
-    J --> M
-    K --> M
-    L --> M
-
-    M --> N[Build LLM Prompt]
-    E --> N
-    O[Conversation History] --> N
-
-    N --> P[Ollama LLM<br/>Generate Response]
-    P --> Q[Update Conversation History]
-    Q --> R[Return Response]
-
-    C --> R
-```
-
-#### Processing Steps
-
-1. **Query Analysis**: Detect query type (greeting, simple, or complex)
-2. **Document Retrieval**: FAISS similarity search for relevant chunks
-3. **Entity Extraction**: Regex patterns to identify key entities
-4. **API Enrichment**: Call external APIs based on extracted entities
-5. **Prompt Construction**: Combine context, API data, and conversation history
-6. **LLM Generation**: Ollama generates contextual response
-7. **Memory Update**: Append to conversation history
-
----
-
-### Backend API Layer
-
-```mermaid
-graph TB
-    subgraph "Express Backend API"
-        A[Express App Server<br/>Port 3456]
-
-        B[Swagger UI<br/>/docs]
-        C[Auth Routes<br/>/auth/token]
-        D[Protected Routes]
-
-        A --> B
-        A --> C
-        A --> D
-
-        subgraph "Authentication"
-            E[Bearer Token Middleware]
-            C --> E
-            D --> E
-        end
-
-        subgraph "API Endpoints"
-            F[ping<br/>Health Check]
-            G[api/team<br/>Team Profiles]
-            H[api/investments<br/>Investment Data]
-            I[api/sectors<br/>Sector Info]
-            J[api/consultations<br/>Consultation Data]
-            K[api/scrape<br/>Web Scraping]
-            L[api/documents<br/>Document Download]
-        end
-
-        D --> F
-        D --> G
-        D --> H
-        D --> I
-        D --> J
-        D --> K
-        D --> L
-
-        subgraph "Data Models"
-            M[TeamMember Model]
-            N[Investment Model]
-            O[Sector Model]
-            P[Consultation Model]
-        end
-
-        G --> M
-        H --> N
-        I --> O
-        J --> P
-
-        M --> Q[(MongoDB)]
-        N --> Q
-        O --> Q
-        P --> Q
-    end
-```
-
-#### Backend Components
-
-- **Express Server**: Node.js/TypeScript API server
-- **Authentication**: Bearer token-based authentication
-- **Swagger Documentation**: Auto-generated API documentation
-- **MongoDB Integration**: Mongoose ORM for data persistence
-- **Route Handlers**: Modular route controllers for each endpoint
-
----
-
-### Data Layer
-
-```mermaid
-erDiagram
-    TEAM_MEMBER ||--o{ INSIGHT : has
-    TEAM_MEMBER {
-        string name PK
-        string role
-        string bio
-        string personal_quote
-    }
-    INSIGHT {
-        string title
-        string date
-        string link
-    }
-
-    INVESTMENT {
-        string company_name PK
-        string sector
-        string description
-        string investment_date
-        float amount
-    }
-
-    SECTOR {
-        string name PK
-        string description
-        string market_size
-        array companies
-    }
-
-    CONSULTATION {
-        string consultant_name PK
-        string company
-        string date
-        string topic
-        string notes
-    }
-
-    DOCUMENT_CHUNK {
-        int id PK
-        string filename
-        string content
-        array embedding
-        int chunk_index
-    }
-```
-
-#### Data Models
-
-1. **TeamMember**: Portfolio team profiles with related insights
-2. **Investment**: Portfolio company investment details
-3. **Sector**: Market sector information and trends
-4. **Consultation**: Consultation history and notes
-5. **DocumentChunk**: Embedded text chunks from MasterClass documents
-
----
-
-## Data Flow Architecture
-
-### Query Processing Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Flask API
-    participant R as RAG Engine
-    participant V as FAISS Store
-    participant L as Ollama LLM
-    participant E as Express API
-    participant M as MongoDB
-
-    U->>F: POST /chat {query}
-    F->>R: Process Query
-
-    R->>V: Similarity Search
-    V-->>R: Top-K Documents
-
-    R->>R: Extract Entities<br/>(Regex Patterns)
-
-    par API Enrichment
-        R->>E: GET /api/team?name=...
-        E->>M: Query TeamMember
-        M-->>E: Member Data
-        E-->>R: Team Profile
-
-        R->>E: GET /api/investments?company=...
-        E->>M: Query Investment
-        M-->>E: Investment Data
-        E-->>R: Investment Info
-
-        R->>E: GET /api/sectors?sector=...
-        E->>M: Query Sector
-        M-->>E: Sector Data
-        E-->>R: Sector Info
-    end
-
-    R->>R: Build Prompt<br/>(Docs + API + History)
-
-    R->>L: Generate Response
-    L-->>R: LLM Output
-
-    R->>R: Update History
-    R-->>F: Response
-    F-->>U: JSON Response
-```
-
-### Document Indexing Flow
-
-```mermaid
-sequenceDiagram
-    participant S as System Startup
-    participant E as Express API
-    participant D as Document Processor
-    participant T as Text Splitter
-    participant H as HuggingFace Embeddings
-    participant V as FAISS Vector Store
-
-    S->>E: GET /api/documents/download
-    E-->>S: documents.zip
-
-    S->>D: Extract ZIP
-    D->>D: Read .txt Files
-
-    loop For Each Document
-        D->>T: Split into Chunks<br/>(500 chars, 100 overlap)
-        T-->>D: Text Chunks[]
-
-        D->>H: Encode Chunks
-        H-->>D: Embeddings[]
-    end
-
-    D->>V: Build Index
-    V-->>D: FAISS Index Ready
-
-    D-->>S: Indexing Complete
-    S->>S: Ready for Queries
-```
-
----
-
-## Deployment Architecture
-
-### Google Colab Deployment
-
-```mermaid
-graph TB
-    subgraph "Google Colab Environment"
-        A[Colab Notebook<br/>T4 GPU Runtime]
-
-        subgraph "Setup Phase"
-            B[Install colab-xterm]
-            C[Launch XTerm Terminal]
-            D[Install Ollama CLI]
-            E[Pull llama2 Model]
-        end
-
-        subgraph "Runtime Services"
-            F[Ollama Server<br/>Background Process]
-            G[Flask App<br/>Port 5000]
-            H[ngrok Tunnel<br/>Public HTTPS]
-        end
-
-        subgraph "Python Environment"
-            I[langchain_community]
-            J[faiss-cpu]
-            K[sentence-transformers]
-            L[pyngrok]
-        end
-
-        A --> B --> C --> D --> E
-        E --> F
-        A --> I
-        A --> J
-        A --> K
-        A --> L
-
-        F --> G
-        G --> H
-        L --> H
-    end
-
-    subgraph "External Services"
-        M[Express API<br/>Render.com]
-        N[MongoDB Atlas]
-        O[Internet Clients]
-    end
-
-    H <--> O
-    G <--> M
-    M <--> N
-```
-
-### Production Deployment (Render.com)
-
-```mermaid
-graph TB
-    subgraph "Render.com Cloud"
-        A[Express API Service]
-        B[Environment Variables<br/>.env]
-        C[Auto-Deploy from Git]
-
-        A --> B
-        C --> A
-    end
-
-    subgraph "MongoDB Atlas"
-        D[(Production Database)]
-        E[Automated Backups]
-        F[Connection String]
-    end
-
-    subgraph "Client Access"
-        G[Public HTTPS Endpoint<br/>rag-langchain-ai-system.onrender.com]
-        H[Swagger UI<br/>/docs]
-    end
-
-    A <--> D
-    D --> E
-    B --> F
-    A --> G
-    A --> H
-
-    I[GitHub Repository] --> C
-```
+- Production-operable runtime with health/readiness/liveness endpoints.
+- Traceable requests using `X-Request-ID`.
+- Deployable across local Docker, AWS EKS, and OCI OKE.
+- Progressive delivery support (rolling/canary/blue-green).
 
 ---
 
 ## Technology Stack
 
-### Core Technologies
+This architecture covers the full technology inventory used across application services, retrieval runtime, frontend, infrastructure, and delivery tooling.
 
-```mermaid
-mindmap
-  root((RAG AI System))
-    Backend
-      Express.js
-      TypeScript
-      Node.js
-      MongoDB/Mongoose
-      Swagger/OpenAPI
+### Languages And Formats
 
-    AI/ML
-      LangChain
-      Ollama
-      HuggingFace
-      FAISS
-      llama2 Model
-      all-MiniLM-L6-v2
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Bash](https://img.shields.io/badge/Bash-121011?style=for-the-badge&logo=gnubash&logoColor=white)
+![HCL](https://img.shields.io/badge/HCL-Terraform%20Language-623CE4?style=for-the-badge)
+![YAML](https://img.shields.io/badge/YAML-Configuration-CB171E?style=for-the-badge)
+![Markdown](https://img.shields.io/badge/Markdown-Documentation-000000?style=for-the-badge&logo=markdown&logoColor=white)
 
-    Frontend/Interface
-      Flask
-      Jupyter/Colab
-      Python CLI
-      ngrok
+### RAG, AI, And Python Runtime
 
-    DevOps
-      Docker
-      Render.com
-      GitHub Actions
-      Makefile
+![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Flask CORS](https://img.shields.io/badge/Flask--CORS-5.0-000000?style=for-the-badge)
+![Flask SocketIO](https://img.shields.io/badge/Flask--SocketIO-5.4-010101?style=for-the-badge)
+![Gunicorn](https://img.shields.io/badge/Gunicorn-23.0-499848?style=for-the-badge)
+![Eventlet](https://img.shields.io/badge/Eventlet-0.36-333333?style=for-the-badge)
+![LangChain](https://img.shields.io/badge/LangChain-0.3-0B3D2E?style=for-the-badge)
+![LangChain Community](https://img.shields.io/badge/LangChain--Community-0.3-0B3D2E?style=for-the-badge)
+![LangChain Core](https://img.shields.io/badge/LangChain--Core-0.3-0B3D2E?style=for-the-badge)
+![LangChain Ollama](https://img.shields.io/badge/LangChain--Ollama-0.2-222222?style=for-the-badge)
+![LangChain OpenAI](https://img.shields.io/badge/LangChain--OpenAI-0.2-10A37F?style=for-the-badge)
+![LangChain HuggingFace](https://img.shields.io/badge/LangChain--HuggingFace-0.1-FFCC4D?style=for-the-badge)
+![Ollama](https://img.shields.io/badge/Ollama-LLM%20Runtime-222222?style=for-the-badge)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-0.6-5A45FF?style=for-the-badge)
+![FAISS](https://img.shields.io/badge/FAISS-Vector%20Index-005571?style=for-the-badge)
+![Sentence Transformers](https://img.shields.io/badge/Sentence--Transformers-3.4-FFB000?style=for-the-badge)
+![Transformers](https://img.shields.io/badge/Transformers-4.48-FFCC4D?style=for-the-badge)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.6-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![Rank BM25](https://img.shields.io/badge/Rank--BM25-0.2-4D4D4D?style=for-the-badge)
+![Pydantic](https://img.shields.io/badge/Pydantic-2.10-E92063?style=for-the-badge)
+![Pydantic Settings](https://img.shields.io/badge/Pydantic--Settings-2.8-E92063?style=for-the-badge)
+![Requests](https://img.shields.io/badge/Requests-2.32-2A6DB0?style=for-the-badge)
+![AIOHTTP](https://img.shields.io/badge/AIOHTTP-3.11-2C5BB4?style=for-the-badge)
+![Tenacity](https://img.shields.io/badge/Tenacity-9.0-4D4D4D?style=for-the-badge)
+![Redis Py](https://img.shields.io/badge/Redis--py-5.2-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Tiktoken](https://img.shields.io/badge/Tiktoken-0.8-333333?style=for-the-badge)
+![Loguru](https://img.shields.io/badge/Loguru-0.7-0F4C81?style=for-the-badge)
+![PyPDF](https://img.shields.io/badge/PyPDF-5.1-B31B1B?style=for-the-badge)
+![python docx](https://img.shields.io/badge/python--docx-1.1-2B579A?style=for-the-badge)
+![python pptx](https://img.shields.io/badge/python--pptx-1.0-D24726?style=for-the-badge)
+![OpenPyXL](https://img.shields.io/badge/OpenPyXL-3.1-217346?style=for-the-badge)
+![BeautifulSoup4](https://img.shields.io/badge/BeautifulSoup4-4.12-59666C?style=for-the-badge)
+![lxml](https://img.shields.io/badge/lxml-5.3-0B4B6F?style=for-the-badge)
+![Pyngrok](https://img.shields.io/badge/Pyngrok-7.2-1F6FEB?style=for-the-badge)
 
-    Data Processing
-      Text Splitter
-      Regex Entity Extraction
-      Vector Embeddings
-      Web Scraping
-```
+### Backend API Stack
 
-### Technology Matrix
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.18-000000?style=for-the-badge&logo=express&logoColor=white)
+![Mongoose](https://img.shields.io/badge/Mongoose-7.0-880000?style=for-the-badge)
+![Swagger JSDoc](https://img.shields.io/badge/Swagger--JSDoc-6.2-85EA2D?style=for-the-badge)
+![Swagger UI](https://img.shields.io/badge/Swagger--UI--Express-5.0-85EA2D?style=for-the-badge)
+![Archiver](https://img.shields.io/badge/Archiver-5.3-4D4D4D?style=for-the-badge)
+![Dotenv](https://img.shields.io/badge/dotenv-16.0-ECD53F?style=for-the-badge)
+![Faker](https://img.shields.io/badge/Faker-5.5-9B59B6?style=for-the-badge)
+![Nodemon](https://img.shields.io/badge/Nodemon-2.0-76D04B?style=for-the-badge)
+![ts-node](https://img.shields.io/badge/ts--node-10.9-3178C6?style=for-the-badge)
+![Prettier](https://img.shields.io/badge/Prettier-3.3-F7B93E?style=for-the-badge&logo=prettier&logoColor=black)
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **LLM** | Ollama (llama2) | Natural language generation |
-| **Embeddings** | HuggingFace (all-MiniLM-L6-v2) | Text vectorization |
-| **Vector DB** | FAISS | Similarity search |
-| **Backend API** | Express.js + TypeScript | RESTful services |
-| **Database** | MongoDB + Mongoose | Data persistence |
-| **RAG Framework** | LangChain | Document processing pipeline |
-| **API Server** | Flask + Python | RAG endpoint exposure |
-| **Documentation** | Swagger UI | API documentation |
-| **Tunneling** | ngrok | Colab public access |
-| **Deployment** | Render.com, Docker | Cloud hosting |
+### Frontend Stack
 
----
+![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![React DOM](https://img.shields.io/badge/React--DOM-18.3-61DAFB?style=for-the-badge)
+![Material UI](https://img.shields.io/badge/MUI-6.3-007FFF?style=for-the-badge&logo=mui&logoColor=white)
+![Emotion](https://img.shields.io/badge/Emotion-11.13-D26AC2?style=for-the-badge)
+![Axios](https://img.shields.io/badge/Axios-1.7-5A29E4?style=for-the-badge)
+![React Markdown](https://img.shields.io/badge/React--Markdown-9.0-111111?style=for-the-badge)
+![React Syntax Highlighter](https://img.shields.io/badge/React--Syntax--Highlighter-15.6-222222?style=for-the-badge)
+![Socket.IO Client](https://img.shields.io/badge/Socket.IO--Client-4.8-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
+![UUID](https://img.shields.io/badge/UUID-11.0-4D4D4D?style=for-the-badge)
+![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![NGINX](https://img.shields.io/badge/NGINX-Proxy-009639?style=for-the-badge&logo=nginx&logoColor=white)
 
-## Design Patterns and Principles
+### Data, Infra, And Operations
 
-### Architectural Patterns
+![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-6BA539?style=for-the-badge&logo=swagger&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker--Compose-Orchestration-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestration-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Kustomize](https://img.shields.io/badge/Kustomize-Overlay%20Management-326CE5?style=for-the-badge)
+![Argo Rollouts](https://img.shields.io/badge/Argo--Rollouts-Progressive%20Delivery-EF7B4D?style=for-the-badge)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-623CE4?style=for-the-badge&logo=terraform&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-Cloud-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Amazon EKS](https://img.shields.io/badge/Amazon--EKS-Kubernetes-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Amazon ECR](https://img.shields.io/badge/Amazon--ECR-Registry-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Amazon VPC](https://img.shields.io/badge/Amazon--VPC-Network-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![AWS KMS](https://img.shields.io/badge/AWS--KMS-Encryption-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![OCI](https://img.shields.io/badge/Oracle%20Cloud%20Infrastructure-Cloud-C74634?style=for-the-badge)
+![Oracle OKE](https://img.shields.io/badge/Oracle--OKE-Kubernetes-C74634?style=for-the-badge)
+![Oracle VCN](https://img.shields.io/badge/Oracle--VCN-Network-C74634?style=for-the-badge)
 
-```mermaid
-graph TB
-    subgraph "Design Patterns"
-        A[Retrieval-Augmented<br/>Generation Pattern]
-        B[Repository Pattern<br/>MongoDB Models]
-        C[Middleware Pattern<br/>Auth/Logging]
-        D[Strategy Pattern<br/>Entity Extractors]
-        E[Factory Pattern<br/>API Clients]
-        F[Singleton Pattern<br/>Vector Store]
-    end
+### Quality And Developer Tooling
 
-    subgraph "SOLID Principles"
-        G[Single Responsibility<br/>Modular Routes]
-        H[Open/Closed<br/>Extensible Endpoints]
-        I[Dependency Injection<br/>DB Connection]
-        J[Interface Segregation<br/>API Contracts]
-    end
-
-    subgraph "Best Practices"
-        K[Error Handling]
-        L[Logging & Monitoring]
-        M[Input Validation]
-        N[Rate Limiting]
-        O[Documentation]
-    end
-
-    A --> G
-    B --> G
-    C --> M
-    D --> H
-    E --> I
-    F --> G
-
-    style A fill:#cfe2ff
-    style G fill:#d1e7dd
-    style K fill:#fff3cd
-```
-
-### Key Design Decisions
-
-1. **Modular Architecture**: Separate concerns (routes, models, middleware)
-2. **Stateless API**: RESTful design for horizontal scalability
-3. **In-Memory Vector Store**: FAISS for fast retrieval (trade-off: not persistent)
-4. **Bearer Authentication**: Simple token-based security
-5. **Error-First Handling**: Graceful degradation with fallback messages
-6. **Conversation Memory**: Client-side state management (global variable)
-
----
-
-## Security Architecture
-
-```mermaid
-graph TB
-    subgraph "Security Layers"
-        A[Bearer Token Authentication]
-        B[Environment Variables<br/>Secrets Management]
-        C[Input Validation<br/>Query Parameters]
-        D[HTTPS/TLS<br/>Transport Security]
-        E[CORS Configuration]
-        F[Rate Limiting<br/>Future Enhancement]
-    end
-
-    subgraph "API Security Flow"
-        G[Client Request] --> H{Has Bearer Token?}
-        H -->|No| I[401 Unauthorized]
-        H -->|Yes| J{Valid Token?}
-        J -->|No| I
-        J -->|Yes| K[Access Granted]
-        K --> L{Input Valid?}
-        L -->|No| M[400 Bad Request]
-        L -->|Yes| N[Process Request]
-    end
-
-    subgraph "Data Security"
-        O[MongoDB Access Control]
-        P[Connection String Encryption]
-        Q[No Hardcoded Secrets]
-    end
-
-    A --> H
-    D --> G
-```
-
-### Security Measures
-
-- **Authentication**: Bearer token required for all protected endpoints
-- **Environment Variables**: Sensitive data stored in `.env` files (not committed)
-- **HTTPS**: Enforced in production (Render.com automatic)
-- **Input Validation**: Query parameter sanitization
-- **Error Messages**: Generic errors to avoid information leakage
-- **MongoDB**: Connection string encryption and access control
-
----
-
-## Scalability Considerations
-
-### Horizontal Scaling Strategy
-
-```mermaid
-graph TB
-    subgraph "Load Balancer"
-        A[Nginx/AWS ALB]
-    end
-
-    subgraph "API Instances"
-        B[Flask Instance 1]
-        C[Flask Instance 2]
-        D[Flask Instance N]
-    end
-
-    subgraph "Backend API Cluster"
-        E[Express Instance 1]
-        F[Express Instance 2]
-        G[Express Instance N]
-    end
-
-    subgraph "Data Layer"
-        H[(MongoDB Replica Set)]
-        I[Redis Cache<br/>Future Enhancement]
-        J[S3/Object Storage<br/>Documents]
-    end
-
-    subgraph "AI/ML Services"
-        K[Ollama Service 1<br/>GPU Instance]
-        L[Ollama Service 2<br/>GPU Instance]
-        M[Shared FAISS Index<br/>Read-Only]
-    end
-
-    A --> B
-    A --> C
-    A --> D
-
-    B --> E
-    C --> F
-    D --> G
-
-    E --> H
-    F --> H
-    G --> H
-
-    B --> K
-    C --> L
-    D --> M
-
-    B --> J
-    C --> J
-    D --> J
-```
-
-### Scalability Challenges and Solutions
-
-| Challenge | Current Limitation | Solution |
-|-----------|-------------------|----------|
-| **Vector Store** | In-memory FAISS (single instance) | Migrate to persistent vector DB (Pinecone, Weaviate) |
-| **LLM Latency** | Single Ollama instance | Load-balanced LLM service with queueing |
-| **Conversation State** | Global variable (not distributed) | Redis or database-backed session store |
-| **Document Updates** | Manual re-indexing | Automated indexing pipeline with webhooks |
-| **API Rate Limiting** | No rate limiting | Implement Redis-based rate limiter |
-| **Monitoring** | Basic logging | Add Prometheus + Grafana dashboards |
-
-### Performance Optimization
+![Pytest](https://img.shields.io/badge/Pytest-8.3-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Pytest Asyncio](https://img.shields.io/badge/Pytest--Asyncio-0.24-0A9EDC?style=for-the-badge)
+![Black](https://img.shields.io/badge/Black-24.10-000000?style=for-the-badge)
+![Type Checking](https://img.shields.io/badge/TypeScript--Typecheck-tsc-3178C6?style=for-the-badge)
 
 ```mermaid
 graph LR
-    subgraph "Current Performance"
-        A[2-5s Query Response]
-        B[In-Memory FAISS<br/>Fast Retrieval]
-        C[Direct API Calls<br/>No Caching]
-    end
-
-    subgraph "Optimization Strategies"
-        D[Caching Layer<br/>Redis]
-        E[Batch Embeddings<br/>GPU Optimization]
-        F[Async API Calls<br/>Parallel Requests]
-        G[Connection Pooling<br/>MongoDB]
-        H[CDN for Documents<br/>S3 + CloudFront]
-    end
-
-    A --> D
-    B --> E
-    C --> F
-    C --> G
-    C --> H
+  UI[React Frontend] --> API[RAG Flask API]
+  API --> RET[LangChain Retrieval Stack]
+  API --> AGENT[Agentic Orchestrator]
+  AGENT --> BE[Express Backend]
+  BE --> MDB[MongoDB]
+  API --> CHROMA[Chroma + BM25 + FAISS]
+  DEVOPS[Docker + K8s + Terraform + Argo] --> API
+  DEVOPS --> BE
+  DEVOPS --> UI
 ```
 
 ---
 
-## Entity Extraction Architecture
+## System Context
 
 ```mermaid
 graph TB
-    A[User Query + History] --> B[Entity Extractor]
+    User[End User]
+    FE[Frontend Web App]
+    RAG[RAG API Service]
+    BE[Backend API Service]
+    Mongo[(MongoDB)]
+    Chroma[(Chroma Persisted Collection)]
+    Files[(Uploads + Logs)]
 
-    B --> C{Regex Pattern Matching}
-
-    C -->|Person Pattern| D["consult/profile/team with <Name>"]
-    C -->|Company Pattern| E["company <CompanyName>"]
-    C -->|Sector Pattern| F["sector of <Sector>"]
-    C -->|URL Pattern| G["https?://..."]
-
-    D --> H[API Router]
-    E --> H
-    F --> H
-    G --> H
-
-    H --> I{Route to API}
-
-    I -->|Person| J[/api/team<br/>/api/consultations/]
-    I -->|Company| K[/api/investments/]
-    I -->|Sector| L[/api/sectors/]
-    I -->|URL| M[/api/scrape/]
-
-    J --> N[Aggregate Results]
-    K --> N
-    L --> N
-    M --> N
-
-    N --> O[Enriched Context<br/>for LLM]
+    User --> FE
+    FE --> RAG
+    RAG --> BE
+    BE --> Mongo
+    RAG --> Chroma
+    RAG --> Files
 ```
+
+### Bounded responsibilities
+
+| Boundary | Responsibility |
+|---|---|
+| `frontend` | User interface and interaction orchestration |
+| `rag-app` | Chat API, retrieval orchestration, tool chaining, response synthesis |
+| `backend` | Structured domain APIs and document export |
+| `mongodb` | Backend persistence |
 
 ---
 
-## API Endpoint Architecture
+## Container Architecture
+
+```mermaid
+graph LR
+    subgraph Client
+      Browser
+    end
+
+    subgraph Application
+      Frontend[frontend\nReact + Vite/NGINX]
+      RagApp[rag-app\nFlask + Socket.IO]
+      Backend[backend\nExpress]
+    end
+
+    subgraph Data
+      Mongo[(MongoDB)]
+      Redis[(Redis - infra optional)]
+      Chroma[(chroma_db)]
+      Uploads[(uploads)]
+      Logs[(logs)]
+    end
+
+    Browser --> Frontend
+    Frontend --> RagApp
+    RagApp --> Backend
+    Backend --> Mongo
+    RagApp --> Chroma
+    RagApp --> Uploads
+    RagApp --> Logs
+    RagApp -. optional infra cache path .-> Redis
+```
+
+### Runtime port map
+
+| Service | Internal Port | External Port (default) |
+|---|---:|---:|
+| `frontend` | `80` (nginx build) / `3000` (vite dev) | `3000` |
+| `rag-app` | `5000` | `5000` |
+| `backend` | `3456` | `3456` |
+| `mongodb` | `27017` | `27017` |
+| `redis` | `6379` | `6379` |
+
+---
+
+## RAG Service Internal Architecture
+
+Primary code roots:
+- `rag_system/api/factory.py`
+- `rag_system/services/chat_service.py`
+- `rag_system/engine.py`
+- `rag_system/services/agentic_orchestrator.py`
+- `rag_system/clients/backend_api.py`
+- `rag_system/storage/*`
 
 ```mermaid
 graph TB
-    subgraph "API Endpoints by Category"
-        A[Authentication]
-        B[Health Check]
-        C[Documents]
-        D[Team Management]
-        E[Investments]
-        F[Sectors]
-        G[Consultations]
-        H[Web Scraping]
-    end
+    API[Flask API Layer]
+    WS[Socket.IO Event Handlers]
+    CS[ChatService]
 
-    A --> A1[POST /auth/token<br/>Generate Bearer Token]
+    SS[InMemorySessionStore]
+    RC[ResponseCache]
+    RL[InMemoryRateLimiter]
 
-    B --> B1[GET /ping<br/>Verify Credentials]
+    ENG[AdvancedRAGEngine]
+    RET[Retrievers\nVector/BM25/Ensemble]
+    RER[CrossEncoder Reranker]
+    LLM[LLMChain + Ollama]
 
-    C --> C1[GET /api/documents/download<br/>Download MasterClass ZIP]
+    ORCH[AgenticApiOrchestrator]
+    CLIENT[BackendApiClient]
 
-    D --> D1[GET /api/team?name=...<br/>Team Member Profile]
-    D --> D2[GET /api/team/insights?name=...<br/>Member Insights]
+    API --> CS
+    WS --> CS
 
-    E --> E1[GET /api/investments?company_name=...<br/>Investment Details]
-    E --> E2[GET /api/investments/insights?company_name=...<br/>Investment Insights]
+    API --> RL
+    CS --> SS
+    CS --> RC
+    CS --> ENG
 
-    F --> F1[GET /api/sectors?sector=...<br/>Sector Information]
+    ENG --> RET
+    ENG --> RER
+    ENG --> LLM
+    ENG --> ORCH
 
-    G --> G1[GET /api/consultations?name=...<br/>Consultation History]
+    ORCH --> CLIENT
+```
 
-    H --> H1[GET /api/scrape?url=...<br/>Scrape URL Content]
+### API middleware behavior
+
+`rag_system/api/factory.py` implements:
+- Request start timing
+- Request ID assignment and response echo (`X-Request-ID`)
+- Optional gateway auth for non-public paths
+- In-memory rate limiting for `/api/*`
+- Structured JSON errors
+
+Public endpoints exempted from gateway checks:
+- `/livez`
+- `/readyz`
+- `/health`
+- `/openapi.json`
+
+### Retrieval strategies
+
+Defined via enum and routed in `engine.py`:
+- `semantic`
+- `hybrid`
+- `multi_query`
+- `decomposed`
+
+```mermaid
+flowchart TD
+    Q[Query] --> STRAT{Strategy}
+    STRAT -->|semantic| S1[Vector retrieval]
+    STRAT -->|hybrid| H1[Ensemble retrieval]
+    STRAT -->|multi_query| M1[Query variants]
+    STRAT -->|decomposed| D1[Sub-query decomposition]
+
+    M1 --> H1
+    D1 --> H1
+
+    S1 --> RR{enable_reranking}
+    H1 --> RR
+
+    RR -->|true| R1[CrossEncoder rerank]
+    RR -->|false| R2[Use retrieval scores]
+
+    R1 --> P[Prompt assembly]
+    R2 --> P
+    P --> G[LLM generation]
+```
+
+### Agentic orchestration flow
+
+`AgenticApiOrchestrator`:
+- plans calls from query/entities/context
+- executes backend tools
+- appends follow-up calls from response-derived cues
+- emits execution trace with status (`ok`, `empty`, `error`)
+
+```mermaid
+flowchart LR
+    E[Extract entities] --> PLAN[Plan tool calls]
+    PLAN --> EXEC[Execute via BackendApiClient]
+    EXEC --> TRACE[Record call trace]
+    EXEC --> FUP[Generate follow-up calls]
+    FUP --> EXEC
+    TRACE --> OUT[api_chain_trace + api_data]
 ```
 
 ---
 
-## Conversation Memory Architecture
+## Backend Service Architecture
+
+Primary code roots:
+- `backend/src/app.ts`
+- `backend/src/routes/*`
+- `backend/src/models/*`
+- `backend/src/db.ts`
+
+### Route groups
+
+- auth: `/auth/token` (unprotected)
+- auth-protected domain routes:
+  - `/ping`
+  - `/api/documents/download`
+  - `/api/team`
+  - `/api/team/insights`
+  - `/api/investments`
+  - `/api/investments/insights`
+  - `/api/sectors`
+  - `/api/consultations`
+  - `/api/scrape`
+
+### Auth behavior
+
+Bearer middleware enforces token equality (current demo token behavior). Replace with production identity integration for hardened deployments.
+
+### Backend request flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller
+    participant App as Express App
+    participant Auth as Bearer Middleware
+    participant Route as Route Handler
+    participant DB as MongoDB
+
+    Caller->>App: GET /api/team?name=...
+    App->>Auth: validate Authorization header
+    Auth-->>App: pass/fail
+    App->>Route: invoke route handler
+    Route->>DB: query model
+    DB-->>Route: result
+    Route-->>Caller: JSON payload
+```
+
+---
+
+## Frontend Architecture
+
+Primary code roots:
+- `frontend/src/App.tsx`
+- `frontend/src/components/ChatInterface.tsx`
+- `frontend/src/lib/api.ts`
+- `frontend/vite.config.ts`
+
+### Key behavior
+
+- API client via Axios with request-ID injection.
+- Optional gateway token forwarding (`VITE_API_GATEWAY_TOKEN`).
+- Socket.IO streaming + REST fallback.
+- Session management UI and persisted client preferences.
+- Tool trace + source citation visualization.
+
+### Frontend interaction model
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Initialized: System Startup
-
-    Initialized --> WaitingForQuery: Ready
-
-    WaitingForQuery --> ProcessingQuery: User Input
-
-    ProcessingQuery --> RetrievingDocs: Query Received
-    RetrievingDocs --> ExtractingEntities: Documents Retrieved
-    ExtractingEntities --> CallingAPIs: Entities Extracted
-    CallingAPIs --> GeneratingResponse: API Data Aggregated
-
-    GeneratingResponse --> UpdatingHistory: LLM Response Generated
-
-    UpdatingHistory --> WaitingForQuery: History Updated
-
-    UpdatingHistory --> [*]: Exit/Quit
-
-    note right of UpdatingHistory
-        Conversation history format:
-        "User: <query>\nAssistant: <response>\n..."
-        Stored in global variable or session
-    end note
-
-    note right of ProcessingQuery
-        History passed to:
-        1. Entity extraction
-        2. LLM prompt construction
-    end note
+    [*] --> Idle
+    Idle --> Sending: User submits message
+    Sending --> Streaming: Socket chunk events
+    Sending --> AwaitingRest: REST response path
+    Streaming --> Completed: response_complete
+    AwaitingRest --> Completed: /api/chat response
+    Sending --> Error: transport or API error
+    Streaming --> Error: websocket error
+    Error --> Idle: user retries
+    Completed --> Idle
 ```
+
+### Vite proxy routing (dev)
+
+During local dev, frontend proxies:
+- `/api/*`
+- `/health`, `/readyz`, `/livez`
+- `/openapi.json`
+- `/socket.io`
+
+to `http://localhost:5000`.
 
 ---
 
-## Error Handling and Resilience
+## Data Model
+
+### Backend domain model (Mongo)
 
 ```mermaid
-graph TB
-    A[Request Received] --> B{Input Valid?}
+erDiagram
+    TEAM_MEMBER ||--o{ TEAM_INSIGHT : has
+    INVESTMENT ||--o{ INVESTMENT_INSIGHT : has
 
-    B -->|No| C[400 Bad Request<br/>Missing Parameters]
-    B -->|Yes| D[Process Request]
+    TEAM_MEMBER {
+      string name
+      string role
+      string bio
+      string personal_quote
+    }
 
-    D --> E{API Call Success?}
+    TEAM_INSIGHT {
+      string title
+      string date
+      string link
+    }
 
-    E -->|Network Error| F[Retry with Exponential Backoff]
-    E -->|404 Not Found| G[Return Friendly Message<br/>'No data found for...']
-    E -->|500 Server Error| H[Log Error + Return Generic Message]
-    E -->|Success| I[Process API Data]
+    INVESTMENT {
+      string company_name
+      string location
+      string website
+      string sectors
+    }
 
-    F --> J{Max Retries?}
-    J -->|No| E
-    J -->|Yes| G
+    INVESTMENT_INSIGHT {
+      string date
+      string title
+      string url
+    }
 
-    I --> K{LLM Call Success?}
+    SECTOR {
+      string sector
+      string description
+      string companies
+      string investment_team
+    }
 
-    K -->|Error| L[Return Fallback Response<br/>'Sorry, I encountered an error...']
-    K -->|Success| M[Return LLM Response]
-
-    M --> N[200 OK]
-    C --> O[Return Error JSON]
-    G --> P[Return Note in Context]
-    H --> O
-    L --> O
+    CONSULTATION {
+      string date
+      string company_name
+      string consultation_details
+      number hours
+    }
 ```
+
+### RAG app state model (in-memory + filesystem)
+
+| Store | Type | Scope |
+|---|---|---|
+| Session store | in-memory | process-local |
+| Response cache | in-memory | process-local |
+| Rate limiter | in-memory | process-local |
+| Vector index | Chroma persisted directory | node-local filesystem/PV |
+| Uploads | filesystem | node-local filesystem/PV |
 
 ---
 
-## Component Architecture
+## Primary Execution Flows
 
-### Frontend Layer
-
-The React-based frontend provides a modern, real-time chat interface:
-
-```mermaid
-graph TD
-    subgraph "React Application"
-        A[App.tsx<br/>Material-UI Theme]
-        B[ChatInterface.tsx<br/>Main Chat Component]
-        C[Message.tsx<br/>Message Display]
-        D[SourceCard.tsx<br/>Citation Display]
-    end
-
-    subgraph "State Management"
-        E[Messages State]
-        F[Session State]
-        G[Connection State]
-        H[Strategy Selector]
-    end
-
-    subgraph "Communication Layer"
-        I[Socket.IO Client]
-        J[Axios HTTP Client]
-        K[WebSocket Events]
-    end
-
-    A --> B
-    B --> C
-    B --> D
-    B --> E
-    B --> F
-    B --> G
-    B --> H
-
-    B --> I
-    B --> J
-    I --> K
-
-    style A fill:#2196f3,color:#fff
-    style B fill:#42a5f5,color:#fff
-    style I fill:#4caf50,color:#fff
-```
-
-**Key Features:**
-- Real-time message streaming
-- Markdown rendering with code highlighting
-- Source citation display with relevance scores
-- Strategy selector dropdown
-- File upload interface
-- Session management UI
-
-### API Gateway Layer
-
-Flask application serving as the API gateway with dual interfaces:
-
-```mermaid
-graph LR
-    subgraph "Flask Application"
-        A[Flask App<br/>Port 5000]
-        B[SocketIO<br/>WebSocket Handler]
-        C[REST Routes]
-        D[CORS Middleware]
-    end
-
-    subgraph "Endpoints"
-        E[POST /api/chat]
-        F[POST /api/session]
-        G[GET /api/strategies]
-        H[POST /api/upload]
-        I[GET /health]
-    end
-
-    subgraph "WebSocket Events"
-        J[chat_message]
-        K[response_chunk]
-        L[response_complete]
-        M[join_session]
-    end
-
-    A --> B
-    A --> C
-    A --> D
-
-    C --> E
-    C --> F
-    C --> G
-    C --> H
-    C --> I
-
-    B --> J
-    B --> K
-    B --> L
-    B --> M
-
-    style A fill:#4caf50,color:#fff
-    style B fill:#8bc34a,color:#fff
-    style C fill:#cddc39,color:#fff
-```
-
----
-
-## Advanced RAG Techniques
-
-### Multi-Strategy Retrieval Pipeline
-
-The system implements four distinct retrieval strategies:
-
-```mermaid
-graph TD
-    START[User Query] --> STRATEGY{Select Strategy}
-
-    STRATEGY -->|Semantic| S1[Vector Similarity<br/>ChromaDB Search]
-    STRATEGY -->|Hybrid| S2[Ensemble<br/>50% Vector + 50% BM25]
-    STRATEGY -->|Multi-Query| S3[Generate Variations<br/>Retrieve All]
-    STRATEGY -->|Decomposed| S4[Break into Sub-Queries<br/>Retrieve Each]
-
-    S1 --> DOCS1[Retrieved Documents]
-    S2 --> DOCS2[Retrieved Documents]
-    S3 --> DOCS3[Retrieved Documents]
-    S4 --> DOCS4[Retrieved Documents]
-
-    DOCS1 --> RERANK[Cross-Encoder<br/>Re-Ranking]
-    DOCS2 --> RERANK
-    DOCS3 --> RERANK
-    DOCS4 --> RERANK
-
-    RERANK --> TOP[Top-K Documents<br/>Sorted by Relevance]
-    TOP --> LLM[Generate Response<br/>with Citations]
-
-    style START fill:#e3f2fd,color:#000
-    style STRATEGY fill:#fff3e0,color:#000
-    style RERANK fill:#fce4ec,color:#000
-    style LLM fill:#e8f5e9,color:#000
-```
-
-### Re-Ranking Architecture
-
-Cross-encoder re-ranking for improved relevance:
+### REST chat flow
 
 ```mermaid
 sequenceDiagram
-    participant Q as Query
-    participant R as Retriever
-    participant D as Documents (Top-10)
-    participant CE as Cross-Encoder
-    participant T as Top-K (5)
+    autonumber
+    participant FE as Frontend
+    participant API as /api/chat
+    participant CS as ChatService
+    participant ENG as AdvancedRAGEngine
+    participant ORCH as Agentic Orchestrator
+    participant BE as Backend API
 
-    Q->>R: Execute retrieval strategy
-    R->>D: Return 10 documents
-    D->>CE: Create query-doc pairs
-    Note over CE: Score each pair<br/>with cross-encoder
-    CE->>CE: Predict relevance scores
-    CE->>T: Sort and select top 5
-    T->>Q: Return reranked results
+    FE->>API: POST /api/chat
+    API->>CS: validate + route
+    CS->>ENG: query(strategy)
+    ENG->>ENG: retrieve_documents
+    ENG->>ORCH: call_api_chain
+    ORCH->>BE: tool endpoints
+    BE-->>ORCH: JSON results
+    ORCH-->>ENG: api_data + trace
+    ENG-->>CS: response + sources
+    CS-->>API: result metadata
+    API-->>FE: success payload
 ```
 
-**Re-Ranking Benefits:**
-- Higher precision (@5: 0.89 vs 0.82)
-- Better relevance ordering
-- Reduced hallucination
-- Improved citation quality
-
----
-
-## Real-Time Communication Architecture
-
-### WebSocket Streaming Flow
-
-Real-time response streaming using Socket.IO:
+### WebSocket streaming flow
 
 ```mermaid
 sequenceDiagram
-    participant Client as React Client
+    autonumber
+    participant FE as Frontend Socket
     participant WS as Socket.IO Server
-    participant RAG as RAG Engine
-    participant LLM as Ollama LLM
+    participant CS as ChatService
 
-    Client->>WS: connect()
-    WS-->>Client: connected
-
-    Client->>WS: emit('chat_message', query)
-    WS->>RAG: process_query(query)
-
-    RAG->>RAG: retrieve_documents()
-    WS-->>Client: emit('thinking')
-
-    RAG->>RAG: extract_entities()
-    WS-->>Client: emit('status', 'Calling APIs...')
-
-    RAG->>RAG: call_api_chain()
-    RAG->>LLM: generate_response()
-
-    loop Streaming Response
-        LLM-->>RAG: response_chunk
-        RAG-->>WS: chunk
-        WS-->>Client: emit('response_chunk', chunk)
+    FE->>WS: chat_message{query,strategy,session_id}
+    WS->>FE: thinking
+    WS->>FE: status (retrieval progress)
+    WS->>CS: process_chat
+    CS-->>WS: full response payload
+    loop chunked streaming
+      WS->>FE: response_chunk
     end
-
-    RAG-->>WS: complete_response
-    WS-->>Client: emit('response_complete', {response, sources})
+    WS->>FE: response_complete{sources,metadata,api_chain_trace}
 ```
 
-### Session Management
-
-Multi-user session handling with conversation history:
+### Upload and indexing flow
 
 ```mermaid
-graph TD
-    A[User Request] --> B{Session Exists?}
-    B -->|No| C[Create Session<br/>Generate UUID]
-    B -->|Yes| D[Load Session<br/>Get History]
+sequenceDiagram
+    autonumber
+    participant FE as Frontend
+    participant API as /api/upload
+    participant CS as ChatService
+    participant ENG as RAG Engine
+    participant FS as Filesystem
 
-    C --> E[Initialize Session Store]
-    D --> E
-
-    E --> F[Process Query<br/>with Context]
-    F --> G[Generate Response]
-    G --> H[Update Session<br/>Add Message]
-
-    H --> I[Return Response<br/>+ Session ID]
-
-    style C fill:#4caf50,color:#fff
-    style F fill:#ff9800,color:#fff
-    style H fill:#2196f3,color:#fff
+    FE->>API: multipart/form-data (file)
+    API->>CS: upload_document
+    CS->>FS: save file to uploads/
+    CS->>ENG: ingest_uploaded_file(path)
+    ENG->>ENG: parse + chunk + add_documents
+    ENG-->>CS: added_chunks
+    CS-->>API: filename/stored_as/added_chunks
+    API-->>FE: success response
 ```
 
 ---
 
-## Deployment Architecture
+## Security Model
 
-### Docker Compose Architecture
+### Current controls
 
-Complete containerized deployment with 5 services:
+- Backend bearer token middleware (demo/static token behavior).
+- Optional gateway bearer auth on RAG API.
+- Request ID trace propagation (`X-Request-ID`).
+- In-memory rate limiting on RAG `/api/*`.
+- K8s manifests include ingress TLS-ready definitions and network policies.
 
-```mermaid
-graph TB
-    subgraph "Docker Network: rag-network"
-        
-        subgraph "Frontend Container"
-            F[Nginx + React<br/>Port 80:3000]
-        end
-
-        subgraph "Flask Container"
-            RA[Flask + RAG Engine<br/>Port 5000:5000]
-            CH[(ChromaDB<br/>Volume)]
-        end
-
-        subgraph "Backend Container"
-            EX[Express API<br/>Port 3456:3456]
-        end
-
-        subgraph "MongoDB Container"
-            MG[(MongoDB<br/>Port 27017:27017<br/>Volume)]
-        end
-
-        subgraph "Redis Container"
-            RD[(Redis Cache<br/>Port 6379:6379<br/>Volume)]
-        end
-
-    end
-
-    F -->|HTTP/WS| RA
-    RA -->|HTTP| EX
-    EX -->|TCP| MG
-    RA -.->|Optional| RD
-
-    style F fill:#2196f3,color:#fff
-    style RA fill:#4caf50,color:#fff
-    style EX fill:#00bcd4,color:#fff
-    style MG fill:#4caf50,color:#fff
-    style RD fill:#f44336,color:#fff
-```
-
-**Docker Compose Services:**
-1. **frontend** - Nginx serving React build
-2. **rag-app** - Flask + RAG engine
-3. **backend** - Express API server
-4. **mongodb** - Document database
-5. **redis** - Caching layer (optional)
-
-### Deployment Configuration
+### Security boundaries
 
 ```mermaid
 graph LR
-    subgraph "Development"
-        D1[Local Dev Servers]
-        D2[Hot Reload]
-        D3[Debug Mode]
-    end
+    Internet --> Ingress[Ingress / LB TLS Termination]
+    Ingress --> Frontend
+    Ingress --> RagApp
+    RagApp --> Backend
+    Backend --> Mongo
 
-    subgraph "Production"
-        P1[Docker Containers]
-        P2[Nginx Reverse Proxy]
-        P3[Health Checks]
-        P4[Logging]
-    end
-
-    D1 -.->|docker-compose up| P1
-    P1 --> P2
-    P1 --> P3
-    P1 --> P4
+    classDef ext fill:#f8d7da,stroke:#842029,color:#842029;
+    classDef int fill:#d1e7dd,stroke:#0f5132,color:#0f5132;
+    class Internet ext;
+    class Ingress,Frontend,RagApp,Backend,Mongo int;
 ```
+
+### Production hardening recommendations
+
+- Replace demo bearer auth with real identity/authz stack.
+- Externalize secrets to cloud secret manager + operator.
+- Centralize audit logs and retention policy.
+- Add WAF/rate controls at edge in addition to app-level checks.
 
 ---
 
-## Technology Stack
+## Deployment Topologies
 
-### Complete Technology Matrix
-
-```mermaid
-mindmap
-  root((RAG AI System))
-    Frontend
-      React 18
-      TypeScript 5.7
-      Material-UI 6
-      Socket.IO Client
-      Vite
-    Backend
-      Flask 3.1
-      Flask-SocketIO
-      Flask-CORS
-      Python 3.10+
-    RAG Engine
-      LangChain 0.3
-      ChromaDB
-      Sentence Transformers
-      Cross-Encoders
-      BM25Okapi
-    LLM & Embeddings
-      Ollama
-      llama2
-      all-MiniLM-L6-v2
-      ms-marco-MiniLM
-    Services
-      Express.js
-      MongoDB
-      Swagger
-    DevOps
-      Docker
-      Docker Compose
-      Nginx
-      Redis (optional)
-```
-
----
-
-## Design Patterns and Principles
-
-### Applied Design Patterns
-
-```mermaid
-graph TD
-    A[Design Patterns] --> B[Strategy Pattern<br/>Multiple Retrieval Strategies]
-    A --> C[Observer Pattern<br/>WebSocket Events]
-    A --> D[Factory Pattern<br/>Component Creation]
-    A --> E[Singleton Pattern<br/>RAG Engine Instance]
-    A --> F[Repository Pattern<br/>Data Access]
-    A --> G[Chain of Responsibility<br/>API Chaining]
-
-    style A fill:#9c27b0,color:#fff
-    style B fill:#673ab7,color:#fff
-    style C fill:#3f51b5,color:#fff
-    style D fill:#2196f3,color:#fff
-```
-
-**Key Principles:**
-- **Separation of Concerns**: Frontend, API Gateway, Processing, Storage
-- **Single Responsibility**: Each component has one clear purpose
-- **Dependency Injection**: Configurable components
-- **Interface Segregation**: Clean API contracts
-- **DRY (Don't Repeat Yourself)**: Reusable components
-- **SOLID Principles**: Throughout codebase
-
----
-
-## Security Architecture
-
-### Security Layers
-
-```mermaid
-graph TD
-    A[User Request] --> B[CORS Middleware]
-    B --> C{Authentication}
-    C -->|Valid| D[Rate Limiting]
-    C -->|Invalid| E[401 Unauthorized]
-    D --> F[Input Validation]
-    F --> G[Sanitization]
-    G --> H[Process Request]
-    H --> I[Output Encoding]
-    I --> J[Return Response]
-
-    style C fill:#f44336,color:#fff
-    style E fill:#ff5722,color:#fff
-    style F fill:#ff9800,color:#fff
-```
-
-**Security Features:**
-- CORS configuration for allowed origins
-- Bearer token authentication for Express API
-- Input validation and sanitization
-- Environment variable configuration
-- Secure WebSocket connections
-- No sensitive data in logs
-- Docker network isolation
-
----
-
-## Scalability Considerations
-
-### Horizontal Scaling Architecture
+### Local Docker topology
 
 ```mermaid
 graph TB
-    subgraph "Load Balancer"
-        LB[Nginx Load Balancer]
-    end
-
-    subgraph "Flask Instances"
-        F1[Flask 1]
-        F2[Flask 2]
-        F3[Flask N]
-    end
-
-    subgraph "Shared Services"
-        R[(Redis<br/>Session Store)]
-        C[(ChromaDB<br/>Shared Volume)]
-        M[(MongoDB)]
-    end
-
-    LB --> F1
-    LB --> F2
-    LB --> F3
-
-    F1 --> R
-    F2 --> R
-    F3 --> R
-
-    F1 --> C
-    F2 --> C
-    F3 --> C
-
-    F1 --> M
-    F2 --> M
-    F3 --> M
-
-    style LB fill:#2196f3,color:#fff
-    style R fill:#f44336,color:#fff
+    Browser --> FE[frontend container]
+    FE --> RAG[rag-app container]
+    RAG --> BE[backend container]
+    BE --> MDB[mongodb container]
+    RAG --> V1[(chroma_db volume)]
+    RAG --> V2[(uploads volume)]
+    RAG --> V3[(logs volume)]
 ```
 
-**Scalability Strategies:**
-1. **Horizontal Scaling**: Multiple Flask instances behind load balancer
-2. **Caching**: Redis for frequently accessed data
-3. **Connection Pooling**: MongoDB connection pools
-4. **Async Processing**: Background job queues (Celery)
-5. **CDN**: Static assets served from CDN
-6. **Vector Store**: Distributed ChromaDB deployment
-7. **Database Sharding**: MongoDB sharding for large datasets
+### Kubernetes topology (conceptual)
 
-### Performance Optimization
+```mermaid
+graph TB
+    subgraph Ingress
+      ING[Ingress Controller]
+    end
 
-- Lazy loading of models
-- Response caching
-- Document chunking optimization
-- Batch embedding generation
-- Connection keep-alive
-- Compression (gzip)
-- Database indexing
-- Query optimization
+    subgraph Namespace rag-system
+      FE[frontend Deployment]
+      RA[rag-app Deployment]
+      BE[backend Deployment]
+      MDB[mongodb StatefulSet]
+      RED[redis StatefulSet]
+      PVC[(PVCs)]
+    end
+
+    ING --> FE
+    ING --> RA
+    FE --> RA
+    RA --> BE
+    BE --> MDB
+    RA --> PVC
+    MDB --> PVC
+    RED --> PVC
+```
+
+### Progressive delivery state machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Apply
+    Apply --> Observe
+    Observe --> Smoke
+    Smoke --> Promote: healthy
+    Smoke --> Abort: unhealthy
+    Promote --> Monitor
+    Abort --> Rollback
+    Monitor --> [*]
+    Rollback --> [*]
+```
 
 ---
 
-## Monitoring and Observability
+## Scalability And Reliability
 
-### Logging Architecture
+### Current scaling posture
+
+- Frontend/backend support horizontal scaling with deployment replicas + HPA.
+- `rag-app` can scale horizontally only with careful storage/session/cache externalization.
+
+### Critical scale coupling points
+
+- Session store is process-local memory.
+- Response cache is process-local memory.
+- Rate limiter is process-local memory.
+- Vector/upload directories require shared storage semantics for multi-replica behavior.
+
+### Reliability controls in place
+
+- readiness/liveness probes
+- startup sequencing in compose/k8s
+- PDB manifests for service availability maintenance
+- rollout scripts for controlled release actions
+
+---
+
+## Observability And Operations
+
+### Built-in observability signals
+
+- Request-level structured logs (method/path/status/latency/request_id)
+- Health endpoints for synthetic checks
+- `X-Request-ID` in responses
+- API trace payload from agentic orchestration (`api_chain_trace`)
+
+### Operational scripts
+
+- root command dispatcher: `scripts/system.sh`
+- deploy actions: `deploy/scripts/rollout.sh`
+- endpoint smoke: `deploy/scripts/smoke-test.sh`
+
+### Day-2 command map
+
+| Goal | Command |
+|---|---|
+| full local setup | `scripts/system.sh setup` |
+| run quality gate | `scripts/system.sh test` |
+| local health checks | `scripts/system.sh health` |
+| local smoke chat | `scripts/system.sh smoke` |
+| deploy rollout apply | `deploy/scripts/rollout.sh <strategy> <cloud> apply` |
+| rollout status | `deploy/scripts/rollout.sh <strategy> <cloud> status` |
+| promote/abort | `deploy/scripts/rollout.sh <strategy> <cloud> promote|abort <service>` |
+
+---
+
+## Failure Modes And Recovery
+
+```mermaid
+flowchart TD
+    X[Incident Detected] --> T{Type}
+    T -->|Availability| A[Probe failures / service down]
+    T -->|Latency| L[High p95/p99]
+    T -->|Correctness| C[Bad response / wrong enrichment]
+
+    A --> A1[Check rollout status + pod logs]
+    L --> L1[Inspect retrieval path + backend dependency latency]
+    C --> C1[Inspect api_chain_trace + source payload]
+
+    A1 --> R[Rollback/Abort rollout]
+    L1 --> R
+    C1 --> R
+
+    R --> V[Run smoke tests]
+    V --> S[Stabilize and postmortem]
+```
+
+Recommended recovery order:
+1. Stop blast radius (`abort`/rollback strategy).
+2. Re-establish health endpoints.
+3. Validate chat and tools via smoke checks.
+4. Capture request IDs and traces for root-cause analysis.
+
+---
+
+## Request Context Propagation Model
+
+The platform uses request-context propagation for observability, tracing, and support diagnostics.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Browser/Caller
+    participant FE as Frontend
+    participant RAG as RAG API
+    participant BE as Backend API
+
+    Client->>FE: user action
+    FE->>RAG: HTTP request + X-Request-ID
+    RAG->>RAG: attach/normalize request_id in request context
+    RAG-->>FE: response + X-Request-ID (+ rate headers when enabled)
+    RAG->>BE: backend API call with bearer auth
+    BE-->>RAG: domain payload/error
+    FE-->>Client: render response or surfaced error with request_id
+```
+
+Operational implications:
+- request IDs can be correlated across UI reports, API logs, and rollout windows
+- rate-limit metadata can drive client retry behavior
+- `api_chain_trace` plus request IDs enables tool-call-level triage
+
+---
+
+## State Placement Strategy
+
+Current architecture intentionally keeps some state local for simplicity, with an explicit evolution path for horizontally consistent scaling.
+
+### Current placement
+
+| State | Current location | Shared across replicas | Production implication |
+|---|---|---|---|
+| session history | process memory | No | conversation continuity is instance-local |
+| response cache | process memory | No | cache efficiency degrades with scale-out |
+| rate limit counters | process memory | No | limits are not globally enforced |
+| vector index | local PV/filesystem | Partial | failover/scale requires storage discipline |
+| uploads | local PV/filesystem | Partial | stateless scale requires shared object storage |
+
+### Evolution path
+
+```mermaid
+flowchart LR
+    M1[In-memory stores] --> M2[Redis-backed shared state]
+    F1[Local PV vector/uploads] --> F2[Shared/object storage + managed vector service]
+    M2 --> H[Horizontal scale consistency]
+    F2 --> H
+```
+
+Recommended sequence:
+1. externalize session/cache/rate limit to shared Redis
+2. decouple uploads from node-local storage
+3. move vector persistence to shared or managed infrastructure
+4. scale `rag-app` replicas with deterministic behavior guarantees
+
+---
+
+## CI/CD And Release Control Plane
+
+```mermaid
+flowchart TD
+    Commit[Commit/Merge] --> CI[CI checks + tests]
+    CI --> Build[Build backend/rag-app/frontend images]
+    Build --> Registry[ECR/OCIR push with immutable tags]
+    Registry --> Deploy[rollout.sh apply selected overlay]
+    Deploy --> Observe[rollout status + metrics + logs]
+    Observe --> Smoke[smoke-test.sh endpoint validation]
+    Smoke --> Decision{Healthy?}
+    Decision -->|Yes| Promote[rollout promote]
+    Decision -->|No| Abort[rollout abort + rollback]
+    Promote --> Close[Release report + runbook updates]
+    Abort --> Incident[Incident response + corrective action]
+```
+
+Control points:
+- pre-release quality gate: `scripts/system.sh test`
+- rollout orchestration: `deploy/scripts/rollout.sh`
+- release validation: `deploy/scripts/smoke-test.sh`
+- promotion prerequisite checklist: `deploy/docs/PRODUCTION_CHECKLIST.md`
+
+---
+
+## Known Constraints
+
+- In-memory stores are not shared across replicas.
+- RAG stateful assets require shared storage strategy for strict multi-replica consistency.
+- Canary/blue-green operations depend on Argo Rollouts installation and cluster permissions.
+- Backend auth is currently a demo token model and must be replaced for high-security production requirements.
+
+---
+
+## Extension Points
+
+### High-value extensions
+
+- Externalize session/cache/rate limit to Redis.
+- Replace backend auth with OIDC/JWT verification.
+- Add centralized metrics/tracing (OpenTelemetry pipeline).
+- Add asynchronous ingestion queue for large file processing.
+- Introduce model provider abstraction for non-Ollama managed inference backends.
+
+### Extension dependency map
 
 ```mermaid
 graph LR
-    A[Application Logs] --> B[Loguru]
-    C[Access Logs] --> D[Nginx]
-    E[Error Logs] --> F[Sentry/Alternative]
-
-    B --> G[Log Files]
-    D --> G
-    F --> G
-
-    G --> H[Log Aggregation<br/>ELK/Loki]
-    H --> I[Dashboards<br/>Grafana]
+    OBS[Observability stack] --> API[rag-app + backend]
+    AUTH[OIDC/JWT auth] --> API
+    REDIS[Shared Redis] --> SESS[session/cache/rate stores]
+    QUEUE[Async ingest queue] --> UPLOAD[api/upload pipeline]
+    MODEL[Managed model endpoint] --> LLM[response generation]
 ```
 
-**Monitoring Endpoints:**
-- `/health` - Application health status
-- `/metrics` - Performance metrics (optional)
-- Docker container health checks
-- Log aggregation and analysis
-
 ---
+
+## Related Documents
+
+- Platform overview: [`README.md`](README.md)
+- Operator runbook: [`QUICKSTART.md`](QUICKSTART.md)
+- Deployment docs:
+  - `deploy/README.md`
+  - `deploy/k8s/README.md`
+  - `deploy/docs/PROGRESSIVE_DELIVERY.md`
+  - `deploy/docs/PRODUCTION_CHECKLIST.md`
+- Unified API contract: [`openapi.yaml`](openapi.yaml)

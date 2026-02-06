@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-preview
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 3456
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-app-preview
+spec:
+  selector:
+    app: rag-app
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-preview
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

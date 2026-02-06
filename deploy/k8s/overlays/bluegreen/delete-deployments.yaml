@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+$patch: delete
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-app
+$patch: delete
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+$patch: delete

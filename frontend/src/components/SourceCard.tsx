@@ -1,54 +1,94 @@
-import React from 'react';
-import { Box, Typography, Chip, Paper } from '@mui/material';
-import { Article as ArticleIcon } from '@mui/icons-material';
-
-interface Source {
-  source: string;
-  score: number;
-  preview: string;
-}
+import { Box, Chip, Link, Paper, Typography } from "@mui/material";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import type { ChatSource } from "../types/chat";
 
 interface SourceCardProps {
-  source: Source;
+  source: ChatSource;
   index: number;
 }
 
-const SourceCard: React.FC<SourceCardProps> = ({ source, index }) => {
+const SourceCard = ({ source, index }: SourceCardProps) => {
   const getScoreColor = (score: number) => {
-    if (score >= 0.8) return 'success';
-    if (score >= 0.6) return 'warning';
-    return 'error';
+    if (score >= 0.8) return "success";
+    if (score >= 0.6) return "warning";
+    return "default";
   };
+
+  const scoreLabel =
+    source.score >= 0.8 ? "High" : source.score >= 0.6 ? "Medium" : "Low";
+  const isLink =
+    source.source.startsWith("http://") || source.source.startsWith("https://");
 
   return (
     <Paper
-      elevation={0}
+      variant="outlined"
       sx={{
         p: 1.5,
-        bgcolor: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 2,
+        borderColor: "var(--outline)",
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.94))",
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-        <ArticleIcon sx={{ fontSize: 16, mr: 1, opacity: 0.7 }} />
-        <Typography variant="caption" sx={{ flex: 1, fontWeight: 'bold' }}>
-          [{index + 1}] {source.source}
-        </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          mb: 0.75,
+          flexWrap: "wrap",
+        }}
+      >
+        {isLink ? (
+          <LanguageRoundedIcon
+            sx={{ fontSize: 18, color: "var(--brand-blue)" }}
+          />
+        ) : (
+          <DescriptionOutlinedIcon
+            sx={{ fontSize: 18, color: "var(--brand-blue)" }}
+          />
+        )}
+        {isLink ? (
+          <Link
+            href={source.source}
+            target="_blank"
+            rel="noreferrer"
+            underline="hover"
+            sx={{
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              flexGrow: 1,
+              minWidth: 0,
+            }}
+          >
+            [{index + 1}] {source.source}
+          </Link>
+        ) : (
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 700, flexGrow: 1, minWidth: 0 }}
+          >
+            [{index + 1}] {source.source}
+          </Typography>
+        )}
         <Chip
-          label={`${(source.score * 100).toFixed(0)}%`}
           size="small"
+          label={`${Math.round(source.score * 100)}%`}
           color={getScoreColor(source.score)}
-          sx={{ height: 18, fontSize: '0.65rem' }}
+          sx={{ fontWeight: 600 }}
+        />
+        <Chip
+          size="small"
+          label={scoreLabel}
+          variant="outlined"
+          sx={{ fontWeight: 600 }}
         />
       </Box>
       <Typography
-        variant="caption"
-        sx={{
-          display: 'block',
-          opacity: 0.8,
-          fontStyle: 'italic',
-          fontSize: '0.7rem',
-        }}
+        variant="body2"
+        color="text.secondary"
+        sx={{ lineHeight: 1.5, whiteSpace: "pre-wrap" }}
       >
         {source.preview}
       </Typography>

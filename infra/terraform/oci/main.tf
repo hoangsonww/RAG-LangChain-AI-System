@@ -10,11 +10,23 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
 
+locals {
+  common_tags = merge(
+    {
+      Project = var.cluster_name
+    },
+    var.tags,
+  )
+
+  first_ad = data.oci_identity_availability_domains.ads.availability_domains[0].name
+}
+
 resource "oci_core_vcn" "vcn" {
   cidr_block     = var.vcn_cidr
   compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}-vcn"
   dns_label      = "ragvcn"
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_internet_gateway" "igw" {
@@ -22,18 +34,21 @@ resource "oci_core_internet_gateway" "igw" {
   display_name   = "${var.cluster_name}-igw"
   vcn_id         = oci_core_vcn.vcn.id
   enabled        = true
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_nat_gateway" "nat" {
   compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}-nat"
   vcn_id         = oci_core_vcn.vcn.id
+  freeform_tags  = local.common_tags
 }
 
 resource "oci_core_route_table" "public" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
   display_name   = "${var.cluster_name}-public-rt"
+  freeform_tags  = local.common_tags
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -46,6 +61,7 @@ resource "oci_core_route_table" "private" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
   display_name   = "${var.cluster_name}-private-rt"
+  freeform_tags  = local.common_tags
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -58,6 +74,7 @@ resource "oci_core_security_list" "public" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
   display_name   = "${var.cluster_name}-public-sl"
+  freeform_tags  = local.common_tags
 
   ingress_security_rules {
     protocol = "6"
@@ -105,6 +122,7 @@ resource "oci_core_security_list" "private" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
   display_name   = "${var.cluster_name}-private-sl"
+  freeform_tags  = local.common_tags
 
   ingress_security_rules {
     protocol = "all"
@@ -120,23 +138,25 @@ resource "oci_core_security_list" "private" {
 resource "oci_core_subnet" "public" {
   cidr_block                 = var.public_subnet_cidr
   compartment_id             = var.compartment_ocid
-  vcn_id                      = oci_core_vcn.vcn.id
+  vcn_id                     = oci_core_vcn.vcn.id
   display_name               = "${var.cluster_name}-public-subnet"
   dns_label                  = "public"
   route_table_id             = oci_core_route_table.public.id
   security_list_ids          = [oci_core_security_list.public.id]
   prohibit_public_ip_on_vnic = false
+  freeform_tags              = local.common_tags
 }
 
 resource "oci_core_subnet" "private" {
   cidr_block                 = var.private_subnet_cidr
   compartment_id             = var.compartment_ocid
-  vcn_id                      = oci_core_vcn.vcn.id
+  vcn_id                     = oci_core_vcn.vcn.id
   display_name               = "${var.cluster_name}-private-subnet"
   dns_label                  = "private"
   route_table_id             = oci_core_route_table.private.id
   security_list_ids          = [oci_core_security_list.private.id]
   prohibit_public_ip_on_vnic = true
+  freeform_tags              = local.common_tags
 }
 
 resource "oci_containerengine_cluster" "oke" {
@@ -144,9 +164,10 @@ resource "oci_containerengine_cluster" "oke" {
   kubernetes_version = var.kubernetes_version
   name               = var.cluster_name
   vcn_id             = oci_core_vcn.vcn.id
+  freeform_tags      = local.common_tags
 
   endpoint_config {
-    is_public_ip_enabled = true
+    is_public_ip_enabled = var.cluster_endpoint_public_access
     subnet_id            = oci_core_subnet.public.id
   }
 
@@ -171,12 +192,44 @@ resource "oci_containerengine_node_pool" "oke_pool" {
   kubernetes_version = var.kubernetes_version
   name               = "${var.cluster_name}-pool"
   node_shape         = var.node_shape
+  freeform_tags      = local.common_tags
 
   node_config_details {
     size = var.node_count
 
     placement_configs {
-      availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+      availability_domain = local.first_ad
+      subnet_id           = oci_core_subnet.private.id
+    }
+  }
+
+  node_shape_config {
+    ocpus         = var.node_ocpus
+    memory_in_gbs = var.node_memory_in_gbs
+  }
+
+  node_source_details {
+    source_type = "IMAGE"
+    image_id    = var.node_image_ocid
+  }
+
+  ssh_public_key = file(var.ssh_public_key_path)
+}
+
+resource "oci_containerengine_node_pool" "canary_pool" {
+  count              = var.enable_canary_node_pool ? 1 : 0
+  cluster_id         = oci_containerengine_cluster.oke.id
+  compartment_id     = var.compartment_ocid
+  kubernetes_version = var.kubernetes_version
+  name               = "${var.cluster_name}-canary-pool"
+  node_shape         = var.node_shape
+  freeform_tags      = local.common_tags
+
+  node_config_details {
+    size = var.canary_node_count
+
+    placement_configs {
+      availability_domain = local.first_ad
       subnet_id           = oci_core_subnet.private.id
     }
   }

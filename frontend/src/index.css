@@ -1,23 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+:root {
+  --brand-blue: #0b5fff;
+  --brand-orange: #ea6f1f;
+  --brand-ink: #0f2140;
+  --outline: rgba(14, 30, 61, 0.16);
+}
+
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
+html,
+body,
 #root {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
+  color: var(--brand-ink);
+  background: radial-gradient(
+      circle at 8% 10%,
+      rgba(11, 95, 255, 0.12),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 84% 16%,
+      rgba(234, 111, 31, 0.12),
+      transparent 34%
+    ),
+    linear-gradient(180deg, #f9fbff 0%, #eef3ff 100%);
+  background-attachment: fixed;
+  text-rendering: optimizeLegibility;
+}
+
+.blinking-cursor {
+  animation: cursor-blink 1s steps(2, jump-none) infinite;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 95, 255, 0.35),
+    rgba(11, 95, 255, 0.2)
+  );
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(14, 30, 61, 0.06);
+}
+
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }

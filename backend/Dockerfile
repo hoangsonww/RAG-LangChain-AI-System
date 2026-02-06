@@ -9,9 +9,6 @@ COPY package.json package-lock.json tsconfig.json ./
 # install ALL deps (including devDeps)
 RUN npm ci
 
-# explicitly install faker types
-RUN npm install --no-save @types/faker@5.5.9
-
 # copy your source & compile
 COPY src ./src
 RUN npm run build
@@ -32,5 +29,5 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 COPY documents ./documents
 
-EXPOSE 3000
+EXPOSE 3456
 CMD ["node", "dist/app.js"]

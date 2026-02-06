@@ -1,43 +1,97 @@
-# Production Checklist
+# Production Readiness And Release Gate Checklist
 
-Use this checklist before a production rollout.
+Mandatory pre-deployment checklist for production promotion.
 
-## Security
+Use this checklist before:
+- `rollout.sh ... apply`
+- `rollout.sh ... promote`
 
-- [ ] Replace default secrets in `deploy/k8s/base/secret.yaml`
-- [ ] Lock down ingress hostnames and TLS (cert-manager or managed TLS)
-- [ ] Restrict API access with auth and WAF (cloud-native where possible)
-- [ ] Limit `admin_cidr` in OCI Terraform and security groups in AWS
-- [ ] Enable image scanning and only deploy signed or vetted images
+No unchecked critical item should be bypassed without an explicit incident/exception decision.
 
-## Infrastructure
+---
 
-- [ ] Confirm Kubernetes version compatibility (EKS/OKE)
-- [ ] Ensure ingress controller is installed (NGINX or AWS ALB)
-- [ ] Use managed databases if you need HA (MongoDB/Redis)
-- [ ] Validate storage class names in overlays (gp3 or oci-bv)
+## Release Gate Model
 
-## Kubernetes
+```mermaid
+flowchart TD
+  Start[Release Candidate Ready] --> Security[Security Gate]
+  Security --> Platform[Platform Gate]
+  Platform --> Workload[Workload Gate]
+  Workload --> Release[Release Control Gate]
+  Release --> Observability[Observability Gate]
+  Observability --> Promote{All gates passed?}
+  Promote -->|Yes| Deploy[Proceed with rollout]
+  Promote -->|No| Block[Block and remediate]
+```
 
-- [ ] Set resource requests/limits for all services
-- [ ] Confirm readiness/liveness probes pass
-- [ ] Configure pod disruption budgets for frontend and backend
-- [ ] Add `imagePullSecrets` for private registries
+---
 
-## Data & Backups
+## 1) Security Gate
 
-- [ ] Schedule MongoDB backups (if self-hosted)
-- [ ] Snapshot PVCs for ChromaDB and uploads
-- [ ] Test restore procedures on a staging cluster
+- [ ] `rag-secrets` has no placeholder values (`change-me` removed).
+- [ ] TLS certs issued and valid for active and preview ingress hosts.
+- [ ] Cloud administrative CIDRs restricted (`admin_cidr` for OCI, SG/network controls for AWS).
+- [ ] Container images scanned and policy-compliant for `backend`, `rag-app`, `frontend`.
+- [ ] Runtime secrets are sourced from secure secret management flow (not manually edited in Git).
+- [ ] IAM/OCI permissions verified least-privilege for rollout actor and cluster services.
 
-## Observability
+---
 
-- [ ] Enable cluster monitoring (metrics/logs/traces)
-- [ ] Set log retention and alerting thresholds
-- [ ] Add SLO alerts for latency and error rates
+## 2) Platform Gate
 
-## Performance
+- [ ] Kubernetes cluster healthy and reachable.
+- [ ] Ingress controller installed and functioning.
+- [ ] Metrics Server healthy (required for HPA targets).
+- [ ] Argo Rollouts installed if canary/blue-green strategy is selected.
+- [ ] StorageClass overrides (`gp3`, `oci-bv`) validated for target cloud.
+- [ ] Base NetworkPolicies tested for frontend->rag-app->backend->mongodb path.
 
-- [ ] Load test critical endpoints
-- [ ] Tune replicas for backend/front-end
-- [ ] Confirm horizontal scaling does not break sticky sessions
+---
+
+## 3) Workload Gate
+
+- [ ] Startup/readiness/liveness probes green for `frontend`, `rag-app`, `backend`.
+- [ ] `rag-app` PVC (`rag-app-data`) is bound and writable.
+- [ ] MongoDB connectivity validated from backend runtime.
+- [ ] RAG health endpoints pass (`/health`, `/livez`, `/readyz`).
+- [ ] HPA min/max and PDB settings match intended traffic profile.
+- [ ] Images are pinned to immutable release tags.
+
+---
+
+## 4) Release Control Gate
+
+- [ ] Smoke tests pass on active endpoint before promotion.
+- [ ] For blue-green: smoke tests pass on preview endpoint.
+- [ ] For canary: pause windows are sufficient to observe SLO impact.
+- [ ] Abort and rollback commands have been validated in recent staging dry run.
+- [ ] Operator on-call ownership and escalation contacts confirmed.
+
+---
+
+## 5) Observability Gate
+
+- [ ] Centralized logs available for all runtime services.
+- [ ] Alerts configured for 5xx rate, p95 latency, readiness failures, and rollout failures.
+- [ ] Dashboards include endpoint health and rollout status visibility.
+- [ ] Correlation IDs (`X-Request-ID`) are available end-to-end in logs.
+
+---
+
+## Final Decision Record
+
+Release metadata template:
+
+| Field | Value |
+|---|---|
+| Release tag | |
+| Strategy (`rolling/canary/bluegreen`) | |
+| Cloud (`aws/oci`) | |
+| Operator | |
+| Checklist reviewer | |
+| Start time (UTC) | |
+| End time (UTC) | |
+| Outcome | |
+| Rollback executed? | |
+| Incident reference (if any) | |
+

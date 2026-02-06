@@ -60,7 +60,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo -e "${CYAN}📋 Quick Links:${NC}"
 echo -e "   • Wiki Home:        http://localhost:$PORT"
-echo -e "   • GitHub Repo:      https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support"
+echo -e "   • GitHub Repo:      https://github.com/hoangsonww/RAG-LangChain-AI-System"
 echo -e "   • Live Demo:        https://rag-langchain-ai-system.onrender.com"
 echo ""
 echo -e "${YELLOW}💡 Tips:${NC}"

@@ -454,7 +454,7 @@
     "font-size: 12px; color: #8892b8;",
   );
   console.log(
-    "%cGitHub: https://github.com/hoangsonww/RAG-AI-System-Portfolio-Support",
+    "%cGitHub: https://github.com/hoangsonww/RAG-LangChain-AI-System",
     "font-size: 12px; color: #4facfe;",
   );
 

@@ -268,6 +268,21 @@ a:hover {
   margin: 0 auto;
 }
 
+/* Keep hero content hidden until load animation starts to avoid flash */
+.hero-content > *,
+.stats {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+body.loaded .hero-content > *,
+body.loaded .stats {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .badge {
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-md);

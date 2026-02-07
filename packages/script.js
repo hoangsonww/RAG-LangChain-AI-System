@@ -426,17 +426,16 @@
 
   // ========== Loading Animation Complete ==========
   window.addEventListener("load", () => {
-    document.body.classList.add("loaded");
-
-    // Trigger animations for visible elements
+    // Stagger hero content reveal once all assets are ready
     const visibleElements = document.querySelectorAll(
       ".hero-content > *, .stats",
     );
     visibleElements.forEach((el, index) => {
-      setTimeout(() => {
-        el.style.opacity = "1";
-        el.style.transform = "translateY(0)";
-      }, index * 100);
+      el.style.transitionDelay = `${index * 100}ms`;
+    });
+
+    window.requestAnimationFrame(() => {
+      document.body.classList.add("loaded");
     });
   });
 
@@ -537,16 +536,6 @@
   // ========== Initialize All Features ==========
   function init() {
     console.log("🚀 Initializing RAG AI System Wiki...");
-
-    // Set initial styles for animated elements
-    const animatedElements = document.querySelectorAll(
-      ".hero-content > *, .stats",
-    );
-    animatedElements.forEach((el) => {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(30px)";
-      el.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-    });
 
     // Initialize theme
     initThemeToggle();

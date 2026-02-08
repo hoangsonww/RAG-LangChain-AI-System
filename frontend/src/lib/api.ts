@@ -48,6 +48,11 @@ export class ApiRequestError extends Error {
 
 const toError = (error: unknown): ApiRequestError => {
   const axiosError = error as AxiosError<{ error?: string }>;
+  if (!axiosError.response) {
+    return new ApiRequestError(
+      "RAG API is unreachable. Start the backend/rag-app services or verify VITE_API_BASE_URL.",
+    );
+  }
   const message =
     axiosError.response?.data?.error ??
     axiosError.message ??

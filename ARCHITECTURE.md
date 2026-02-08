@@ -213,9 +213,9 @@ graph LR
     end
 
     subgraph Application
-      Frontend[frontend\nReact + Vite/NGINX]
-      RagApp[rag-app\nFlask + Socket.IO]
-      Backend[backend\nExpress]
+      Frontend[frontend - React + Vite/NGINX]
+      RagApp[rag-app - Flask + Socket.IO]
+      Backend[backend - Express]
     end
 
     subgraph Data
@@ -269,7 +269,7 @@ graph TB
     RL[InMemoryRateLimiter]
 
     ENG[AdvancedRAGEngine]
-    RET[Retrievers\nVector/BM25/Ensemble]
+    RET[Retrievers - Vector/BM25/Ensemble]
     RER[CrossEncoder Reranker]
     LLM[LLMChain + Ollama]
 
@@ -446,6 +446,10 @@ During local dev, frontend proxies:
 - `/socket.io`
 
 to `http://localhost:5000`.
+
+<p align="center">
+  <img src="frontend/public/ui.png" alt="Chat Interface Screenshot" width="100%"/>
+</p>
 
 ---
 
@@ -876,6 +880,7 @@ graph LR
 ## Related Documents
 
 - Platform overview: [`README.md`](README.md)
+- Agentic RAG design: [`AGENTIC_RAG.md`](AGENTIC_RAG.md)
 - Operator runbook: [`QUICKSTART.md`](QUICKSTART.md)
 - Deployment docs:
   - `deploy/README.md`

@@ -42,11 +42,11 @@ The platform is designed around a single product goal: **deliver high-confidence
 
 ```mermaid
 graph LR
-    U[End User] --> FE[Frontend UI\nReact + Socket.IO]
-    FE --> RAG[RAG API\nFlask + Chat Service]
-    RAG --> RET[Retrieval Layer\nChroma + BM25 + Reranker]
+    U[End User] --> FE[Frontend UI - React + Socket.IO]
+    FE --> RAG[RAG API - Flask + Chat Service]
+    RAG --> RET[Retrieval Layer - Chroma + BM25 + Reranker]
     RAG --> ORCH[Agentic Orchestrator]
-    ORCH --> BE[Backend API\nExpress]
+    ORCH --> BE[Backend API - Express]
     BE --> DB[(MongoDB)]
     RAG --> RESP[Source-backed Response + Trace]
     RESP --> FE
@@ -228,9 +228,9 @@ graph TB
   end
 
   subgraph App
-    FE[frontend\nVite/NGINX]
-    RAG[rag-app\nFlask + Socket.IO]
-    BE[backend\nExpress]
+    FE[frontend - Vite/NGINX]
+    RAG[rag-app - Flask + Socket.IO]
+    BE[backend - Express]
   end
 
   subgraph Data
@@ -279,9 +279,9 @@ sequenceDiagram
 flowchart TD
     Q[Incoming Query] --> S{Strategy}
     S -->|semantic| A[Vector Retriever]
-    S -->|hybrid| B[Ensemble Retriever\nVector + BM25]
-    S -->|multi_query| C[Generate alternatives\nthen hybrid retrieval]
-    S -->|decomposed| D[Decompose query\nthen hybrid retrieval]
+    S -->|hybrid| B[Ensemble Retriever - Vector + BM25]
+    S -->|multi_query| C[Generate alternatives - then hybrid retrieval]
+    S -->|decomposed| D[Decompose query - then hybrid retrieval]
 
     A --> RR{Reranking enabled?}
     B --> RR
@@ -363,9 +363,9 @@ graph LR
 
 ```mermaid
 flowchart TD
-  SourceDocs[backend/documents + uploaded files] --> Parse[Document parsing\nTXT/PDF/DOCX/MD]
+  SourceDocs[backend/documents + uploaded files] --> Parse[Document parsing - TXT/PDF/DOCX/MD]
   Parse --> Chunk[Chunking + metadata]
-  Chunk --> Index[Vector index - Chroma\n+ BM25 corpus]
+  Chunk --> Index[Vector index - Chroma - + BM25 corpus]
   Query[User query] --> Strategy[Retrieval strategy selection]
   Strategy --> Retrieve[Semantic/Hybrid/Multi-query/Decomposed retrieval]
   Retrieve --> Rerank[Cross-encoder reranking]
@@ -478,6 +478,10 @@ Optional variables:
 - `VITE_API_BASE_URL`
 - `VITE_SOCKET_URL`
 - `VITE_API_GATEWAY_TOKEN`
+
+<p align="center">
+  <img src="frontend/public/ui.png" alt="Chat Interface Screenshot" width="100%"/>
+</p>
 
 ### Production Security Baseline
 
@@ -680,6 +684,7 @@ scripts/system.sh smoke
 
 If you want to learn more about the concepts and technologies used in this project, as well as essential AI and RAG principles, check out the following resources:
 
+- [Agentic RAG Implementation Guide](AGENTIC_RAG.md)
 - [AI Agents & Assistants](resources/AI_Agents_Assistants.ipynb)
 - [AI and Businesses](resources/AI_and_Businesses.ipynb)
 - [Confusion Matrix for LLM Outputs](resources/Confusion_Matrix.ipynb)
@@ -701,6 +706,7 @@ If you want to learn more about the concepts and technologies used in this proje
 
 - [QUICKSTART.md](QUICKSTART.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
+- [AGENTIC_RAG.md](AGENTIC_RAG.md)
 - [deploy/README.md](deploy/README.md)
 - [deploy/k8s/README.md](deploy/k8s/README.md)
 - [deploy/docs/PROGRESSIVE_DELIVERY.md](deploy/docs/PROGRESSIVE_DELIVERY.md)

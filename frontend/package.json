@@ -9,6 +9,7 @@
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.3.0",
     "axios": "^1.7.9",
+    "prettier": "^3.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
@@ -17,11 +18,11 @@
     "uuid": "^11.0.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.3",
     "vite": "^6.0.7"
   },
@@ -30,7 +31,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "npm run typecheck"
+    "lint": "npm run typecheck",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
   },
   "browserslist": {
     "production": [

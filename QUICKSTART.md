@@ -244,7 +244,7 @@ npm run dev
 
 ```mermaid
 flowchart LR
-    A[Start MongoDB\nlocal or container] --> B[Start backend]
+    A[Start MongoDB - local or container] --> B[Start backend]
     B --> C[Start rag-app]
     C --> D[Start frontend]
     D --> E[Run health + smoke checks]
@@ -335,6 +335,11 @@ At `http://localhost:3000` verify:
 - Health/system panel loads backend tools and runtime metadata.
 - Upload flow accepts allowed file types (`txt`, `md`, `pdf`, `docx`).
 - WebSocket disconnect gracefully falls back to REST behavior.
+- If no backend functionality, frontend shows error notification, but still renders UI.
+
+<p align="center">
+  <img src="frontend/public/ui.png" alt="Chat Interface Screenshot" width="100%"/>
+</p>
 
 ---
 
@@ -462,6 +467,7 @@ flowchart TD
 ## Next References
 
 - Deep design: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Agentic RAG implementation: [`AGENTIC_RAG.md`](AGENTIC_RAG.md)
 - Platform overview: [`README.md`](README.md)
 - Deployment docs:
   - `deploy/README.md`

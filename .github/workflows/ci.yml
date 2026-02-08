@@ -7,7 +7,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
-permissions: read-all
+permissions:
+  contents: read
+  actions: write
 
 defaults:
   run:
@@ -89,6 +91,32 @@ jobs:
           { npm --workspace backend run test; } >/dev/null 2>&1 || true
         continue-on-error: true
 
+      - name: Prepare backend artifact bundle
+        run: |
+          mkdir -p artifacts/backend
+          if [ -d backend/dist ]; then
+            cp -R backend/dist artifacts/backend/
+          fi
+          if [ -f backend/package.json ]; then
+            cp backend/package.json artifacts/backend/
+          fi
+          if [ -f backend/package-lock.json ]; then
+            cp backend/package-lock.json artifacts/backend/
+          fi
+          if [ ! -d artifacts/backend/dist ]; then
+            echo "backend/dist not available for this run." > artifacts/backend/README.txt
+          fi
+        continue-on-error: true
+
+      - name: Upload backend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build-${{ github.run_number }}
+          path: artifacts/backend
+          if-no-files-found: warn
+          retention-days: 14
+        continue-on-error: true
+
       - name: Mark backend job successful
         run: echo "backend job completed"
 
@@ -134,6 +162,32 @@ jobs:
           { npm --workspace frontend run test:unit; } >/dev/null 2>&1 || true
         continue-on-error: true
 
+      - name: Prepare frontend artifact bundle
+        run: |
+          mkdir -p artifacts/frontend
+          if [ -d frontend/dist ]; then
+            cp -R frontend/dist artifacts/frontend/
+          fi
+          if [ -f frontend/package.json ]; then
+            cp frontend/package.json artifacts/frontend/
+          fi
+          if [ -f frontend/package-lock.json ]; then
+            cp frontend/package-lock.json artifacts/frontend/
+          fi
+          if [ ! -d artifacts/frontend/dist ]; then
+            echo "frontend/dist not available for this run." > artifacts/frontend/README.txt
+          fi
+        continue-on-error: true
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ github.run_number }}
+          path: artifacts/frontend
+          if-no-files-found: warn
+          retention-days: 14
+        continue-on-error: true
+
       - name: Mark frontend job successful
         run: echo "frontend job completed"
 
@@ -167,6 +221,32 @@ jobs:
       - name: Run minimal rag_system tests
         run: |
           { pytest -q tests/test_strategy.py tests/test_agentic_orchestrator.py tests/test_session_store.py tests/test_rate_limiter.py; } >/dev/null 2>&1 || true
+        continue-on-error: true
+
+      - name: Prepare rag_system artifact bundle
+        run: |
+          mkdir -p artifacts/rag_system/pyc
+          pyc_count=0
+          while IFS= read -r -d '' file; do
+            rel="${file#rag_system/}"
+            target="artifacts/rag_system/pyc/$rel"
+            mkdir -p "$(dirname "$target")"
+            cp "$file" "$target"
+            pyc_count=$((pyc_count + 1))
+          done < <(find rag_system -type f -name "*.pyc" -print0)
+
+          if [ "$pyc_count" -eq 0 ]; then
+            echo "No compiled rag_system bytecode files were found." > artifacts/rag_system/README.txt
+          fi
+        continue-on-error: true
+
+      - name: Upload rag_system build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-system-build-${{ github.run_number }}
+          path: artifacts/rag_system
+          if-no-files-found: warn
+          retention-days: 14
         continue-on-error: true
 
       - name: Mark rag_system job successful

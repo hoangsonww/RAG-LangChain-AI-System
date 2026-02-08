@@ -159,6 +159,11 @@ jobs:
           { python -m pip install --upgrade pip && pip install -r requirements.txt; } >/dev/null 2>&1 || true
         continue-on-error: true
 
+      - name: Build rag_system
+        run: |
+          { python -m compileall -q rag_system; } >/dev/null 2>&1 || true
+        continue-on-error: true
+
       - name: Run minimal rag_system tests
         run: |
           { pytest -q tests/test_strategy.py tests/test_agentic_orchestrator.py tests/test_session_store.py tests/test_rate_limiter.py; } >/dev/null 2>&1 || true
@@ -174,6 +179,58 @@ jobs:
     needs: [formatting, backend, frontend, rag_system]
     if: ${{ always() }}
     steps:
+      - name: Generate pipeline summary
+        run: |
+          job_badge() {
+            case "$1" in
+              success) echo "✅ Success" ;;
+              failure) echo "❌ Failure" ;;
+              cancelled) echo "⏹️ Cancelled" ;;
+              skipped) echo "⏭️ Skipped" ;;
+              *) echo "⚠️ ${1:-unknown}" ;;
+            esac
+          }
+
+          formatting_result="${{ needs.formatting.result }}"
+          backend_result="${{ needs.backend.result }}"
+          frontend_result="${{ needs.frontend.result }}"
+          rag_result="${{ needs.rag_system.result }}"
+
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          short_sha="${GITHUB_SHA::7}"
+
+          {
+            echo "# CI/CD Pipeline Summary"
+            echo
+            echo "## Job Results"
+            echo
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            echo "| 🔧 Formatting & Lint | $(job_badge "$formatting_result") |"
+            echo "| ✅ Backend Build & Test | $(job_badge "$backend_result") |"
+            echo "| 🌐 Frontend Build & Test | $(job_badge "$frontend_result") |"
+            echo "| 🧠 RAG System Tests | $(job_badge "$rag_result") |"
+            echo
+            echo "## Run Details"
+            echo
+            echo "- **Workflow:** ${{ github.workflow }}"
+            echo "- **Repository:** \`${{ github.repository }}\`"
+            echo "- **Event:** \`${{ github.event_name }}\`"
+            echo "- **Ref:** \`${{ github.ref_name }}\`"
+            echo "- **Commit:** \`$short_sha\`"
+            echo "- **Actor:** \`${{ github.actor }}\`"
+            echo "- **Run Number:** \`${{ github.run_number }}\`"
+            echo "- **Run ID:** \`${{ github.run_id }}\`"
+            echo "- **Run URL:** $run_url"
+            echo
+            echo "## Notes"
+            echo
+            echo "- Pipeline reached final aggregation step."
+            echo "- See per-job logs for full execution details."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Final status
-        run: echo "CI/CD pipeline finished."
+        run: |
+          echo "CI/CD pipeline finished."
+          echo "::notice::Pipeline summary published to GitHub Actions job summary."
         

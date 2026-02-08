@@ -40,6 +40,10 @@ graph LR
   UI --> User
 ```
 
+<p align="center">
+  <img src="public/ui.png" alt="Chat Interface Screenshot" width="100%"/>
+</p>
+
 ---
 
 ## Architecture At A Glance

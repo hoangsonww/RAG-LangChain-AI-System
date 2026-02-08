@@ -21,11 +21,8 @@ body,
 
 body {
   color: var(--brand-ink);
-  background: radial-gradient(
-      circle at 8% 10%,
-      rgba(11, 95, 255, 0.12),
-      transparent 35%
-    ),
+  background:
+    radial-gradient(circle at 8% 10%, rgba(11, 95, 255, 0.12), transparent 35%),
     radial-gradient(
       circle at 84% 16%,
       rgba(234, 111, 31, 0.12),

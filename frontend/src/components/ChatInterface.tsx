@@ -141,6 +141,53 @@ const sortSessions = (items: SessionSummary[]): SessionSummary[] =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
+const DEFAULT_STRATEGIES: Strategy[] = [
+  {
+    id: "semantic",
+    name: "Semantic",
+    description: "Pure vector similarity search using embeddings",
+  },
+  {
+    id: "hybrid",
+    name: "Hybrid",
+    description: "Combines semantic and keyword-based (BM25) search",
+  },
+  {
+    id: "multi_query",
+    name: "Multi Query",
+    description: "Generates query variations for comprehensive retrieval",
+  },
+  {
+    id: "decomposed",
+    name: "Decomposed",
+    description: "Breaks complex queries into simpler sub-queries",
+  },
+];
+
+const STARTUP_TIMEOUT_MS = 8000;
+const SIDEBAR_CARD_RADIUS = 2;
+
+const withTimeout = async <T,>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error(`Timed out after ${timeoutMs} ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 const readStorage = (key: string): string | null => {
   if (typeof window === "undefined") {
     return null;
@@ -188,6 +235,7 @@ const ChatInterface = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>(initialSnackbar);
+  const [degradedNotice, setDegradedNotice] = useState<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -195,6 +243,8 @@ const ChatInterface = () => {
   const sessionIdRef = useRef<string>(sessionId);
   const activeSocketSessionRef = useRef<string>("");
   const hasAnnouncedSocketRef = useRef(false);
+  const hasWarnedSocketFallbackRef = useRef(false);
+  const hasWarnedApiAvailabilityRef = useRef(false);
 
   const notify = useCallback(
     (message: string, severity: SnackbarState["severity"]) => {
@@ -240,10 +290,35 @@ const ChatInterface = () => {
       try {
         const status = await fetchHealth();
         setHealth(status);
+        if (status.backend_api_available) {
+          setDegradedNotice("");
+          hasWarnedApiAvailabilityRef.current = false;
+        } else {
+          setDegradedNotice(
+            "Backend API is unreachable. UI remains available, but live data features may fail.",
+          );
+          if (!hasWarnedApiAvailabilityRef.current) {
+            notify(
+              "Backend API is unreachable. UI will continue in degraded mode.",
+              "warning",
+            );
+            hasWarnedApiAvailabilityRef.current = true;
+          }
+        }
         if (showToast) {
           notify("Health status refreshed", "info");
         }
       } catch (error) {
+        setDegradedNotice(
+          "Backend API is unreachable. UI remains available, but live data features may fail.",
+        );
+        if (!hasWarnedApiAvailabilityRef.current || showToast) {
+          notify(
+            "Backend API is unreachable. UI will continue in degraded mode.",
+            "warning",
+          );
+          hasWarnedApiAvailabilityRef.current = true;
+        }
         if (showToast) {
           notify(formatApiError(error), "error");
         }
@@ -257,9 +332,11 @@ const ChatInterface = () => {
       const sessionItems = await listSessions();
       setSessions(sortSessions(sessionItems));
     } catch (error) {
-      notify(formatApiError(error), "error");
+      setDegradedNotice(
+        "Unable to refresh sessions right now. Backend connectivity may be down.",
+      );
     }
-  }, [notify]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -303,12 +380,19 @@ const ChatInterface = () => {
   }, [notify]);
 
   useEffect(() => {
+    if (!useWebsocket || !isOnline) {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      setIsSocketConnected(false);
+      return;
+    }
+
     const socket = io(SOCKET_URL, {
       path: "/socket.io",
       transports: ["websocket", "polling"],
       timeout: 10000,
-      reconnection: true,
-      reconnectionAttempts: 10,
+      reconnection: false,
+      reconnectionAttempts: 0,
       reconnectionDelay: 500,
       reconnectionDelayMax: 5000,
     });
@@ -334,7 +418,14 @@ const ChatInterface = () => {
     socket.on("connect_error", () => {
       setIsSocketConnected(false);
       setUseWebsocket(false);
-      notify("Socket unavailable. Using REST transport.", "warning");
+      setDegradedNotice(
+        "Realtime channel is unavailable. Falling back to REST mode.",
+      );
+      if (!hasWarnedSocketFallbackRef.current) {
+        notify("Socket unavailable. Using REST transport.", "warning");
+        hasWarnedSocketFallbackRef.current = true;
+      }
+      socket.disconnect();
     });
 
     socket.on("response_chunk", (data: { chunk: string }) => {
@@ -374,16 +465,20 @@ const ChatInterface = () => {
       setIsResponding(false);
       setStreamBuffer("");
       setUseWebsocket(false);
+      setDegradedNotice(
+        "Realtime channel failed. Switched to REST mode automatically.",
+      );
       notify(
         data.message || "Unknown socket error. Switched to REST.",
         "error",
       );
+      socket.disconnect();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [notify, refreshSessions]);
+  }, [isOnline, notify, refreshSessions, useWebsocket]);
 
   useEffect(() => {
     if (!sessionId || !socketRef.current?.connected) {
@@ -411,29 +506,46 @@ const ChatInterface = () => {
       setIsInitializing(true);
       try {
         const [
-          loadedStrategies,
-          loadedHealth,
-          loadedSystemInfo,
-          loadedTools,
-          loadedSessions,
-        ] = await Promise.all([
-          fetchStrategies(),
-          fetchHealth(),
-          fetchSystemInfo(),
-          fetchTools(),
-          listSessions(),
+          strategiesResult,
+          healthResult,
+          systemInfoResult,
+          toolsResult,
+          sessionsResult,
+        ] = await Promise.allSettled([
+          withTimeout(fetchStrategies(), STARTUP_TIMEOUT_MS),
+          withTimeout(fetchHealth(), STARTUP_TIMEOUT_MS),
+          withTimeout(fetchSystemInfo(), STARTUP_TIMEOUT_MS),
+          withTimeout(fetchTools(), STARTUP_TIMEOUT_MS),
+          withTimeout(listSessions(), STARTUP_TIMEOUT_MS),
         ]);
 
         if (!isMounted) {
           return;
         }
 
+        const loadedStrategies =
+          strategiesResult.status === "fulfilled"
+            ? strategiesResult.value
+            : DEFAULT_STRATEGIES;
         setStrategies(loadedStrategies);
-        setHealth(loadedHealth);
-        setSystemInfo(loadedSystemInfo);
-        setBackendTools(loadedTools.tools);
 
-        const sorted = sortSessions(loadedSessions);
+        if (healthResult.status === "fulfilled") {
+          setHealth(healthResult.value);
+          if (healthResult.value.backend_api_available) {
+            setDegradedNotice("");
+          }
+        }
+        if (systemInfoResult.status === "fulfilled") {
+          setSystemInfo(systemInfoResult.value);
+        }
+        if (toolsResult.status === "fulfilled") {
+          setBackendTools(toolsResult.value.tools);
+        }
+
+        const sorted =
+          sessionsResult.status === "fulfilled"
+            ? sortSessions(sessionsResult.value)
+            : [];
         setSessions(sorted);
 
         const preferredStrategy =
@@ -455,15 +567,51 @@ const ChatInterface = () => {
         if (availableSessionId) {
           await loadSession(availableSessionId, false);
         } else {
-          const newSessionId = await createSession();
-          if (!isMounted) {
-            return;
+          try {
+            const newSessionId = await withTimeout(
+              createSession(),
+              STARTUP_TIMEOUT_MS,
+            );
+            if (!isMounted) {
+              return;
+            }
+            setSessionId(newSessionId);
+            setMessages([
+              buildSystemMessage(
+                "New session created. Ask your first question.",
+              ),
+            ]);
+            await refreshSessions();
+          } catch {
+            setMessages([
+              buildSystemMessage(
+                "Backend is currently unavailable. UI is loaded in read-only/degraded mode. Use Refresh Health to retry connectivity.",
+              ),
+            ]);
+            setDegradedNotice(
+              "Backend API is unreachable. UI remains available, but chat/session actions will fail until services recover.",
+            );
           }
-          setSessionId(newSessionId);
-          setMessages([
-            buildSystemMessage("New session created. Ask your first question."),
-          ]);
-          await refreshSessions();
+        }
+
+        const failedBootstrap =
+          strategiesResult.status === "rejected" ||
+          healthResult.status === "rejected" ||
+          systemInfoResult.status === "rejected" ||
+          toolsResult.status === "rejected" ||
+          sessionsResult.status === "rejected";
+
+        if (failedBootstrap && !hasWarnedApiAvailabilityRef.current) {
+          notify(
+            "Some backend services are unavailable. Interface is running in degraded mode.",
+            "warning",
+          );
+          hasWarnedApiAvailabilityRef.current = true;
+          setDegradedNotice(
+            (previous) =>
+              previous ||
+              "Some backend services are unavailable. Core UI is still operational.",
+          );
         }
       } catch (error) {
         notify(formatApiError(error), "error");
@@ -560,6 +708,9 @@ const ChatInterface = () => {
       setIsResponding(false);
       setStreamBuffer("");
       notify(formatApiError(error), "error");
+      setDegradedNotice(
+        "Request failed. Backend API may be unavailable. Please retry after services recover.",
+      );
     }
   };
 
@@ -673,7 +824,16 @@ const ChatInterface = () => {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        height: { xs: "auto", lg: "100dvh" },
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "hidden",
+        overflowY: { xs: "auto", lg: "hidden" },
+      }}
+    >
       <AppBar
         position="sticky"
         elevation={0}
@@ -682,7 +842,9 @@ const ChatInterface = () => {
       >
         <Toolbar
           sx={{
-            gap: 1.5,
+            gap: { xs: 1, md: 1.5 },
+            py: { xs: 0.75, md: 0 },
+            flexWrap: { xs: "wrap", md: "nowrap" },
             borderBottom: "1px solid",
             borderColor: "var(--outline)",
           }}
@@ -695,7 +857,11 @@ const ChatInterface = () => {
             <AutoAwesomeRoundedIcon sx={{ color: "var(--brand-blue)" }} />
             <Typography
               variant="h6"
-              sx={{ fontWeight: 700, letterSpacing: 0.2 }}
+              sx={{
+                fontWeight: 700,
+                letterSpacing: 0.2,
+                fontSize: { xs: 17, md: 20 },
+              }}
             >
               RAG Portfolio Copilot
             </Typography>
@@ -704,8 +870,10 @@ const ChatInterface = () => {
           <Box
             sx={{
               ml: "auto",
+              width: { xs: "100%", md: "auto" },
               display: "flex",
               alignItems: "center",
+              justifyContent: { xs: "flex-start", md: "flex-end" },
               gap: 1,
               flexWrap: "wrap",
             }}
@@ -716,6 +884,7 @@ const ChatInterface = () => {
               label={isSocketConnected ? "Realtime On" : "Realtime Off"}
               color={isSocketConnected ? "success" : "default"}
               variant="outlined"
+              sx={{ px: 0.75, py: 0.2 }}
             />
             <Chip
               size="small"
@@ -723,6 +892,7 @@ const ChatInterface = () => {
               label={isOnline ? "Online" : "Offline"}
               color={isOnline ? "success" : "warning"}
               variant="outlined"
+              sx={{ px: 0.75, py: 0.2 }}
             />
             <Chip
               size="small"
@@ -752,17 +922,32 @@ const ChatInterface = () => {
 
       <Container
         maxWidth="xl"
-        sx={{ py: 2, flexGrow: 1, display: "grid", gap: 2 }}
+        sx={{
+          py: 2,
+          flexGrow: 1,
+          minHeight: { xs: "auto", lg: 0 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          overflow: { xs: "visible", lg: "hidden" },
+        }}
       >
+        {degradedNotice ? (
+          <Alert severity="warning" variant="outlined">
+            {degradedNotice}
+          </Alert>
+        ) : null}
         <Box
           sx={{
+            flexGrow: 1,
+            minHeight: { xs: "auto", lg: 0 },
             display: "grid",
             gridTemplateColumns: {
               xs: "1fr",
               lg: "minmax(0, 2fr) minmax(340px, 1fr)",
             },
             gap: 2,
-            minHeight: { xs: "calc(100vh - 220px)", lg: "calc(100vh - 170px)" },
+            overflow: { xs: "visible", lg: "hidden" },
           }}
         >
           <Paper
@@ -773,6 +958,7 @@ const ChatInterface = () => {
               backgroundColor: "rgba(255,255,255,0.72)",
               display: "flex",
               flexDirection: "column",
+              minHeight: 0,
               overflow: "hidden",
             }}
           >
@@ -827,10 +1013,14 @@ const ChatInterface = () => {
                 </Box>
               </Stack>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ mt: 1.25, flexWrap: "wrap" }}
+              <Box
+                sx={{
+                  mt: 1.25,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1,
+                  alignItems: "stretch",
+                }}
               >
                 {QUICK_PROMPTS.map((prompt) => (
                   <Chip
@@ -839,10 +1029,31 @@ const ChatInterface = () => {
                     size="small"
                     variant="outlined"
                     onClick={() => setInputValue(prompt)}
-                    sx={{ maxWidth: 320 }}
+                    sx={{
+                      width: { xs: "100%", md: "auto" },
+                      maxWidth: { xs: "100%", md: 380 },
+                      height: "auto",
+                      borderRadius: 1.5,
+                      justifyContent: "flex-start",
+                      borderColor: "rgba(11,95,255,0.3)",
+                      backgroundColor: "rgba(11,95,255,0.04)",
+                      transition: "all 160ms ease",
+                      "& .MuiChip-label": {
+                        display: "block",
+                        whiteSpace: "normal",
+                        lineHeight: 1.3,
+                        paddingTop: 0.65,
+                        paddingBottom: 0.65,
+                      },
+                      "&:hover": {
+                        backgroundColor: "rgba(11,95,255,0.1)",
+                        borderColor: "rgba(11,95,255,0.6)",
+                        transform: "translateY(-1px)",
+                      },
+                    }}
                   />
                 ))}
-              </Stack>
+              </Box>
             </Box>
 
             <Box
@@ -925,12 +1136,19 @@ const ChatInterface = () => {
             </Box>
           </Paper>
 
-          <Stack spacing={2}>
+          <Stack
+            spacing={2}
+            sx={{
+              minHeight: 0,
+              overflowY: { xs: "visible", lg: "auto" },
+              pr: { lg: 0.5 },
+            }}
+          >
             <Paper
               elevation={0}
               sx={{
                 p: 2,
-                borderRadius: 4,
+                borderRadius: SIDEBAR_CARD_RADIUS,
                 border: "1px solid var(--outline)",
                 backgroundColor: "rgba(255,255,255,0.76)",
               }}
@@ -962,7 +1180,7 @@ const ChatInterface = () => {
               elevation={0}
               sx={{
                 p: 2,
-                borderRadius: 4,
+                borderRadius: SIDEBAR_CARD_RADIUS,
                 border: "1px solid var(--outline)",
                 backgroundColor: "rgba(255,255,255,0.76)",
               }}
@@ -997,7 +1215,7 @@ const ChatInterface = () => {
               elevation={0}
               sx={{
                 p: 2,
-                borderRadius: 4,
+                borderRadius: SIDEBAR_CARD_RADIUS,
                 border: "1px solid var(--outline)",
                 backgroundColor: "rgba(255,255,255,0.76)",
               }}
@@ -1038,7 +1256,7 @@ const ChatInterface = () => {
               elevation={0}
               sx={{
                 p: 2,
-                borderRadius: 4,
+                borderRadius: SIDEBAR_CARD_RADIUS,
                 border: "1px solid var(--outline)",
                 backgroundColor: "rgba(255,255,255,0.76)",
               }}
